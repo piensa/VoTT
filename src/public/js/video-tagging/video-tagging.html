@@ -22,13 +22,13 @@
     <div id="controlWrapper" class="controlWrapper">
       <playback-control id="playSpeedControl" class="playSpeedControl"></playback-control>
       <div id='videoWrapper' class="relativeDiv">
-            <svg id="selectionZone" class="selectionZoneStyle" >                  
-                </svg>  
+            <svg id="selectionZone" class="selectionZoneStyle" >
+                </svg>
           <div id = "regionLabelDiv" style="width:40px;height:20px;" class="regionLabel" >
               <span id="regionLabelSpan" class="regionLabelSpan"></span>
               <span id="closeRegionImage" on-click="deleteRegion" class="closeRegion clickableControl">X</span>
           </div>
-            
+
 
               <canvas id="overlay"  on-click='videoClicked' class="overlaystyle" width="100" height="100" >
                       Your browser does not support the HTML5 canvas location.
@@ -100,7 +100,7 @@
 </template>
 <script>
 
-  
+
   Polymer({
     is: 'video-tagging',
     properties: {
@@ -186,8 +186,8 @@
             ]).then(function(modules){
                 //var rtools = modules[1].CanvasTools.Region;
                 var stools = modules[0].CanvasTools.Selection;
-                
-                self.areaSelector = new stools.AreaSelector(self.selectionZone, 
+
+                self.areaSelector = new stools.AreaSelector(self.selectionZone,
                     function(){
                     self.selectionZone.style.zIndex = 300;
                 },
@@ -199,10 +199,10 @@
             });
 
         })
-        
+
 /*         this.selectionZone = document.getElementById("selectionZone");
         var self = this;
-        this.areaSelector = AreaSelector.init(this.selectionZone, 
+        this.areaSelector = AreaSelector.init(this.selectionZone,
             function(){
                 self.selectionZone.style.zIndex = 300;
             },
@@ -222,7 +222,7 @@
       //Reset all variables to new src
       this.video.addEventListener( "loadedmetadata", init);
       var self = this;
-      
+
       function init() {
             self.controlWrapper.style.display = "grid";
             //Init variables and controls
@@ -235,24 +235,24 @@
             //self.snapToAspectRatio();
             //Init sliders
             self.volumeSlider.value = 0.5;
-            self.seekBar.max = self.video.duration;            
+            self.seekBar.max = self.video.duration;
 
-            // Update frame size to video size     
-            self.resetLayout();                          
+            // Update frame size to video size
+            self.resetLayout();
             //self.resizeFrameSize(self.video.offsetWidth, self.video.offsetHeight);
             let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
-            self.resizeFrame(scaleByPortrait, self.aspect);         
+            self.resizeFrame(scaleByPortrait, self.aspect);
 
-            self.playingCallback();   
+            self.playingCallback();
 
             //fix resize bug
             $(window).off("resize");
             $(window).resize( function(){
                 if (self.video.offsetWidth !== undefined){
                     //self.snapToAspectRatio();
-                    // Update frame size to video size  
-                    self.resetLayout();                  
-                    
+                    // Update frame size to video size
+                    self.resetLayout();
+
                     //self.resizeFrameSize(self.video.offsetWidth, self.video.offsetHeight);
 
                     let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
@@ -360,7 +360,7 @@
             $('#video-tagging').width(this.snapWidth);
         } */
     //},
-    
+
     /**
        * JQuery Area selector
        * Based on JQuery plugin imgareaselect
@@ -384,7 +384,7 @@
             show:false,
             hide:true
       });
-      
+
       if((this.regiontype.toLowerCase() === "square") || (this.regiontype.toLowerCase() === "rectangle")) {
           $('canvas#overlay').imgAreaSelect({
                         disable: false, //enable/disable
@@ -422,7 +422,7 @@
             return ($(e1).width() * $(e1).height() <= $(e2).width() * $(e2).height());
         }).each(function(idx,e) {
             e.style.zIndex =(idx+200).toString();
-            $(e).css('box-shadow', 'inset 0 0 0 2px ' + $(e).css('border-color')); 
+            $(e).css('box-shadow', 'inset 0 0 0 2px ' + $(e).css('border-color'));
         });
     },
     positionRegionNameLabel: function(div) {
@@ -479,8 +479,8 @@
         var region = this.addRegion(x1, y1, x2, y2);//Add to in-memory collection
         var xOffset = parseFloat(this.overlay.style.left);
         var yOffset = parseFloat(this.overlay.style.top);
-        this.addDivToRegion(x1 + (isNaN(xOffset) ? 0 : xOffset), y1 + (isNaN(yOffset) ? 0 : yOffset), 
-                            x2 + (isNaN(xOffset) ? 0 : xOffset), y2 + (isNaN(yOffset) ? 0 : yOffset), 
+        this.addDivToRegion(x1 + (isNaN(xOffset) ? 0 : xOffset), y1 + (isNaN(yOffset) ? 0 : yOffset),
+                            x2 + (isNaN(xOffset) ? 0 : xOffset), y2 + (isNaN(yOffset) ? 0 : yOffset),
                             region.name, region.tags); //add frame
         this.updateRegionZIndices();//update region z indecies
         this.regionSelected(region.name);//Select it by default
@@ -503,7 +503,7 @@
                   setTimeout(function(){ self.stepFwdClicked(); }, 500);
             }
         }
-        this.emitRegionToHost();//Persist
+        this.emitRegionToHost();//Persist (Useless)
     },
     addTagsToRegion: function(selectedTagsArray) {
           var regionId = this.selectedRegionId -1;//Revert to zero-based array
@@ -533,10 +533,10 @@
                 if ((this.video.currentTime + this.frameTime) > this.video.duration ){
                     return;
                 }
-                if (!this.canMove ) return; 
+                if (!this.canMove ) return;
                 //if there are no unlabled tags move to next frame
                 this.video.currentTime += this.frameTime * (nextFrameOffset);
-                this.playingCallback();            
+                this.playingCallback();
             }
         }
     },
@@ -613,7 +613,7 @@
                   e.stopPropagation();
               });
               //raise regionSelectedEvent
-             $('#video-tagging').trigger('canvasRegionSelected',[divId]); 
+             $('#video-tagging').trigger('canvasRegionSelected',[divId]);
     },
     deleteRegion: function(e) {
           var regions = this.frames[this.getCurrentFrame()];
@@ -641,7 +641,12 @@
        */
     emitRegionToHost: function() {
           var frameIndex = this.getCurrentFrame();
-          this.fire('onregionchanged', {frame: {frameIndex:frameIndex, regions:this.frames[frameIndex]}});
+          this.fire('onregionchanged', {
+              frame: {
+                  frameIndex:frameIndex,
+                  regions:this.frames[frameIndex]
+              }
+          });
     },
     /**
        * @method addDivToRegion
@@ -651,50 +656,48 @@
        * @param {regionId} The region id, which is the region index + 1.
        */
     addDivToRegion: function(x1, y1, x2, y2, regionId, tags) {
-            var div = document.createElement("div");
-            div.id = regionId;
-            div.classList.add("regionCanvas");
+        var div = document.createElement("div");
+        div.id = regionId;
+        div.classList.add("regionCanvas");
 
-            if (tags.length > 0){
-                div.style.borderColor = this.optionalTags.colors[this.inputtagsarray.indexOf(tags[0])];
-            }else {
-                div.style.borderColor = null;
+        if (tags.length > 0){
+            div.style.borderColor = this.optionalTags.colors[this.inputtagsarray.indexOf(tags[0])];
+        }else {
+            div.style.borderColor = null;
+        }
+        if(this.regiontype.toLowerCase() === "point") {
+            div.style.width = this.regionsize - 1 +  "px";//Compensate for 1px border
+            div.style.height = this.regionsize - 1 +  "px";
+            div.style.top = y1 - this.regionsize/2  +  "px";
+            div.style.left = x1 - this.regionsize/2  +  "px";
+            div.classList.add("regionPoint");
+        }
+        if((this.regiontype.toLowerCase() === "square") || (this.regiontype.toLowerCase() === "rectangle")) {
+             // add offset here
+            div.style.width = x2 - x1 + "px";
+            div.style.height = y2 - y1   +  "px";
+            div.style.top = y1  + "px";
+            div.style.left = x1 + "px";
+        }
+        var self = this;
+        $( div ).click(function(e) {
+            self.regionSelected(div.id);
+        });
+        $( div ).mouseenter(function(e) {
+            self.positionRegionNameLabel(this);
+        })
+        .mouseleave(function() {
+            self.regionLabelDiv.style.display = "none";
+            if(self.selectedRegionId === div.id) {
+                  self.regionLabelDiv.style.display = "block";
             }
-            if(this.regiontype.toLowerCase() === "point") {
-                  div.style.width = this.regionsize - 1 +  "px";//Compensate for 1px border
-                  div.style.height = this.regionsize - 1 +  "px";
-                  div.style.top = y1 - this.regionsize/2  +  "px";
-                  div.style.left = x1 - this.regionsize/2  +  "px";
-                  div.classList.add("regionPoint");
-            }
-            if((this.regiontype.toLowerCase() === "square") || (this.regiontype.toLowerCase() === "rectangle")) {
-                 // add offset here
-                  div.style.width = x2 - x1 + "px";
-                  div.style.height = y2 - y1   +  "px";
-                  div.style.top = y1  + "px";
-                  div.style.left = x1 + "px";
-            }
-            var self = this;
-            $( div )
-                      .click(function(e) {
-                         self.regionSelected(div.id);
-                      });
-            $( div )
-                      .mouseenter(function(e) {
-                          self.positionRegionNameLabel(this);
-                      })
-                      .mouseleave(function() {
-                        self.regionLabelDiv.style.display = "none";
-                        if(self.selectedRegionId === div.id) {
-                              self.regionLabelDiv.style.display = "block";
-                        }
+            self.freezeAreaSelection = false;
+        })
+        .mousemove(function(e){
+            self.freezeAreaSelection = true;
+        });
 
-                        self.freezeAreaSelection = false;
-                      })
-                      .mousemove(function(e){
-                         self.freezeAreaSelection = true;
-                      });
-            Polymer.dom(this.$.videoWrapper).appendChild(div);
+        Polymer.dom(this.$.videoWrapper).appendChild(div);
     },
     /**
        * @method cleanSelectedElements
@@ -744,8 +747,8 @@
                   var xOffset = parseFloat(this.overlay.style.left);
                   var yOffset = parseFloat(this.overlay.style.top);
 
-                  this.addDivToRegion(x1 + (isNaN(xOffset) ? 0 : xOffset), y1 + (isNaN(yOffset) ? 0 : yOffset), 
-                                      x2 + (isNaN(xOffset) ? 0 : xOffset), y2 + (isNaN(yOffset) ? 0 : yOffset), 
+                  this.addDivToRegion(x1 + (isNaN(xOffset) ? 0 : xOffset), y1 + (isNaN(yOffset) ? 0 : yOffset),
+                                      x2 + (isNaN(xOffset) ? 0 : xOffset), y2 + (isNaN(yOffset) ? 0 : yOffset),
                                       region.name, region.tags); //add frame
                   //Only 1 region - select it and show tags
                   if (regions.length === 1) {
@@ -755,7 +758,7 @@
               }
             }
     },
-    
+
     /**
        * @method addRegion
        * Adds a region to the array of regions per current frame.
@@ -773,6 +776,7 @@
             region.height = $('#vid').height();
             region.type = this.regiontype;
             region.tags = [];
+            region.unixtime = new Date().getTime();
             var frameIndex = this.getCurrentFrame();
             var regions = this.frames[frameIndex];
             //The array is populated and can contain multiple regions
@@ -807,7 +811,7 @@
     getCurrentFrame: function() {
       if (this.imagelist){
         return this.imageIndex;
-      } 
+      }
       return this.video.currentTime === 0 ? 1 : Math.ceil((this.video.currentTime - this.videoStartTime) * this.framerate) + 1 ;
     },
     indicateEmptyFrame : function(selected) {
@@ -909,7 +913,7 @@
         self.optionalTags.createTagControls(self.inputtagsarray);
 
         //self.resetLayout();
-        
+
         //bind keys (note this currently overrides any listener on the parent controls needs a more elegant way to work only when control is in focus)
         window.addEventListener("keyup", (function(canMove) {
             return function(e) {
@@ -932,7 +936,7 @@
                         self.regionSelected(parseInt(self.selectedRegionId)+1)
                     } else{
                         self.regionSelected(0)
-                    }          
+                    }
                     break;
                     case 68:// d for duplicate
                     if (self.imageIndex > 0){
@@ -950,7 +954,7 @@
                 }
                 e.preventDefault(); // prevent the default action (scroll / move caret)
             };
-        })(true), false);        
+        })(true), false);
     },
     changeImage: function(imageUrl){
         this.rotation = 0;
@@ -963,7 +967,7 @@
             self.aspect = self.curImg.width / self.curImg.height;;
             //Size canvas as image
             let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
-            
+
             self.resizeFrame(scaleByPortrait, self.aspect);
 
             //Init variables and controls
@@ -978,7 +982,7 @@
 
                     let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
                     self.resizeFrame(scaleByPortrait, self.aspect);
-                    
+
                     //resize the region boxes
                     self.showAllRegions();
                     //reposition selectedRegion Label
@@ -1000,8 +1004,8 @@
             this.overlay.style.left = leftShift;
             this.overlay.style.top  = '0px';
 
-            this.frameCanvas.style.margin = "0px " + leftShift; 
-            this.selectionZone.style.margin = "0px " + leftShift;  
+            this.frameCanvas.style.margin = "0px " + leftShift;
+            this.selectionZone.style.margin = "0px " + leftShift;
 
         } else {
             this.resizeFrameSize(this.video.offsetWidth, parseFloat(this.video.offsetWidth / imgRatio));
@@ -1010,8 +1014,8 @@
             this.overlay.style.top = topShift;
             this.overlay.style.left  = '0px';
 
-            this.frameCanvas.style.margin = topShift + " 0px"; 
-            this.selectionZone.style.margin = topShift + " 0px"; 
+            this.frameCanvas.style.margin = topShift + " 0px";
+            this.selectionZone.style.margin = topShift + " 0px";
         }
     },
 
@@ -1021,7 +1025,7 @@
 
         this.overlay.width = this.frameWidth;
         this.overlay.height = this.frameHeight;
-                        
+
         this.frameCanvas.width = this.frameWidth;
         this.frameCanvas.height = this.frameHeight;
 
@@ -1035,8 +1039,8 @@
         this.selectionZone.style.margin = "";
     },
 
-    disableImageDir: function() {       
-        $("#rotate").hide(); 
+    disableImageDir: function() {
+        $("#rotate").hide();
         $(window).off("resize");
         this.imageIndex = 0;
         this.imagelist = undefined;
@@ -1046,13 +1050,14 @@
 
     rotate: function() {
         this.rotation = (this.rotation + 90) % 360;
-        $('#vid').css("transform",`rotate(${this.rotation}deg)`);   
+        $('#vid').css("transform",`rotate(${this.rotation}deg)`);
     },
-    stepFwdClicked: function(fireEvents = true) {       
+    stepFwdClicked: function(fireEvents = true) {
+
         if (this.checkRegionLabels()){
-            //raise before next frame  
+            //raise before next frame
             if (this.imagelist){//image handling
-                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');    
+                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
                 if (this.imageIndex < this.imagelist.length-1) {
                     this.imageIndex++;
                     this.changeImage(`url(file://${this.imagelist[this.imageIndex].replace(/\\/g,"/")})`);
@@ -1064,26 +1069,26 @@
                     //this.video.currentTime = this.video.duration;
                     return;
                 }
-                if (!this.canMove ) return; 
-                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');    
+                if (!this.canMove ) return;
+                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
                 //if there are no unlabled tags move to next frame
                 this.video.currentTime += this.frameTime;
-                this.playingCallback();            
-            } 
+                this.playingCallback();
+            }
             //raise after next frame
             if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-AfterStep');
 
         }
     },
     stepBwdClicked: function(fireEvents = true) {
-        if (!this.canMove) return;    
+        if (!this.canMove) return;
         if (this.imagelist){//image handling
             if (this.imageIndex > 0) {
                 this.imageIndex--;
                 this.changeImage(`url(file://${this.imagelist[this.imageIndex].replace(/\\/g,"/")})`);
                 this.playingCallback();
             }
-        } 
+        }
         if (this.video.currentTime > 0) {
             if(!this.video.paused) {
               this.pauseState();
@@ -1093,7 +1098,7 @@
               this.playingCallback();
             }
         }
-        if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-AfterStep');    
+        if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-AfterStep');
     },
     videoSrcChanged: function(newValue, oldValue) {
           if(this.video){
@@ -1150,11 +1155,11 @@
 
             } else{
                 this.frameText.innerHTML = `${this.getCurrentFrame() + 1}/${this.imagelist.length}`;
-                
+
                 // Update canvas image based on new video frame
                 this.updateFrameCanvas(this.curImg);
             }
-                        
+
             this.showAllRegions();
     },
     displayVideoTime: function() {
