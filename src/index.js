@@ -13,7 +13,7 @@ var saveState,
     detection,
     trackingExtension,
     assetFolder;
-const loggedTime = []
+let loggedTime = [];
 let loggedTimeState;
 
 $(document).ready(() => {//init confirm keys figure out why this doesn't work
@@ -162,10 +162,12 @@ function setLoggedTime(type, frames={}) {
 }
 function saveLoggedTime(){
     //Save the logger loggedTimeState
-    fs.writeFile('logger.json', JSON.stringify(loggedTime, null, '\t'), (err) => {
-        if (err) throw err;
-        console.log('The file logger has been saved!');
-    });
+    if (videotagging && videotagging.src) {
+        fs.writeFile(`${videotagging.src}.log.json`, JSON.stringify(loggedTime, null, '\t'), (err) => {
+            if (err) throw err;
+            console.log('The file logger has been saved!');
+        });
+    }
 }
 
 //drag and drop support
@@ -393,6 +395,7 @@ function openPath(pathName, isDir) {
 
         //init detection
         detection = new DetectionExtension(videotagging, visitedFrames);
+        loggedTime = getInitLoggedTime();
 
         $('#load-form-container').hide();
         $('#video-tagging-container').show();
@@ -404,9 +407,24 @@ function openPath(pathName, isDir) {
     }
 }
 
+function getInitLoggedTime() {
+    const savedData = [];
+    try {
+        savedData.push(
+            ...JSON.parse(fs.readFileSync(`${videotagging.src}.log.json`))
+        );
+    } catch (e) {
+        console.log(`Error loading save file ${e.message}`);
+    } finally {
+        savedData.push(setLoggedTime('focus'));
+        console.log('savedData', savedData);
+    }
+    return savedData;
+}
+
 //saves current video to config
 function save() {
-    console.log('videotagging.frames', videotagging.frames);
+    console.log('videotagging.frames', videotagging.frames, videotagging.src);
     const saveObject = {
         "frames" : videotagging.frames,
         "framerate":$('#framerate').val(),

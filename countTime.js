@@ -1,6 +1,6 @@
-const fs = require('fs')
-const filePath = './experiment_nov_6/logger.json'
-const logger = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+const fs = require('fs');
+const filePath = './experiment_nov_6/logger.json';
+const logger = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
 
 let seconds = 0;
