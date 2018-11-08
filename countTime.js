@@ -1,5 +1,9 @@
 const fs = require('fs');
-const filePath = './experiment_nov_6/logger.json';
+const filePath = process.argv[2];
+
+if (!filePath) {
+    throw new Error('You have to specify the file path as an argument');
+}
 const logger = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
 
