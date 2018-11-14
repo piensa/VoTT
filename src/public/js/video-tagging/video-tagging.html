@@ -22,6 +22,7 @@
     <div id="controlWrapper" class="controlWrapper">
       <playback-control id="playSpeedControl" class="playSpeedControl"></playback-control>
       <div id='videoWrapper' class="relativeDiv">
+            <div id="freezeVideoWrapper" style="background: rgba(160, 85, 32, 0.4);z-index: 500;visibility:hidden"></div>
             <svg id="selectionZone" class="selectionZoneStyle" >
                 </svg>
           <div id = "regionLabelDiv" style="width:40px;height:20px;" class="regionLabel" >
@@ -60,6 +61,11 @@
               </td>
               <td class="videoControlCell simpleControl clickableControl">
                 <span id="clearRegions"  title="clear tags" class="glyphicon glyphicon-ban-circle taggingControls" on-click='clearRegions'></span>
+              </td>
+              <td class="videoControlCell simpleControl clickableControl">
+                <span id="play-pause-annotation"  title="play/pause annotation" class="taggingControls" on-click='playPauseAnnotation'>
+                    <label><input id="check-annotation" type="checkbox" checked><i class="glyphicon glyphicon-font"></i></label>
+                </span>
               </td>
               <td id="rotate" class="videoControlCell simpleControl clickableControl" style="display: none">
                 <span title="rotate right" class="glyphicon glyphicon-repeat taggingControls" on-click="rotate"></span>
@@ -634,6 +640,15 @@
           this.showAllRegions();
           this.emitRegionToHost();
     },
+    playPauseAnnotation: function (e) {
+        const chValue = $( '#check-annotation' ).prop( "checked" );
+        if (chValue) {
+            $('#freezeVideoWrapper').css("visibility", "hidden");
+        }else {
+            $('#freezeVideoWrapper').css("visibility", "visible");
+        }
+        $(window).trigger('playPauseAnnotationEvn', [chValue]);
+    },
     /**
        * @method emitRegionToHost
        * Fires an event to send the array of regions.
@@ -1070,7 +1085,9 @@
                     return;
                 }
                 if (!this.canMove ) return;
-                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
+                if ($( '#check-annotation' ).prop( "checked" )) {
+                    if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
+                }
                 //if there are no unlabled tags move to next frame
                 this.video.currentTime += this.frameTime;
                 this.playingCallback();

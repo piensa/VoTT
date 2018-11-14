@@ -123,33 +123,43 @@ ipcRenderer.on('toggleTracking', (event, message) => {
 
 });
 
-$(window).focus(event => {
-    if (!loggedTime.length ||
-        loggedTime.length && loggedTime[loggedTime.length - 1].type === 'blur') {
-        loggedTime.push(setLoggedTime('focus'));
-    }
-});
-$(window).click(event => {
-    if (loggedTime.length && loggedTime[loggedTime.length - 1].type === 'blur') {
-        loggedTime.push(setLoggedTime('focus'));
-    }
-})
+$(window).focus(setFocuslog);
 
-$(window).blur(setBlurlogg);
+$(window).click(setFocuslog);
+
+$(window).blur(setBlurlog);
 
 let globalTimeout;
 $(window).mousemove(event => {
     clearTimeout(globalTimeout);
-    globalTimeout = setTimeout(setBlurlogg, 1000*60);
+    globalTimeout = setTimeout(setBlurlog, 1000*60);
 });
 
-function setBlurlogg(){
+$(window).on('playPauseAnnotationEvn', function(event, checked) {
+    if (checked) {
+        setFocuslog();
+    }else {
+        setBlurlog();
+    }
+});
+
+function setBlurlog(){
     const frames = videotagging ? videotagging.frames : undefined;
     if (loggedTime.length && loggedTime[loggedTime.length - 1].type === 'focus') {
         loggedTime.push(setLoggedTime('blur', frames));
         saveLoggedTime();
     }
 }
+function setFocuslog(){
+    if (!$( '#check-annotation' ).prop( "checked" )) {
+        return;
+    }
+    if (!loggedTime.length ||
+        loggedTime.length && loggedTime[loggedTime.length - 1].type === 'blur') {
+        loggedTime.push(setLoggedTime('focus'));
+    }
+}
+
 
 function setLoggedTime(type, frames={}) {
     countedFrames = [].concat(...Object.values(frames)).length || undefined;
