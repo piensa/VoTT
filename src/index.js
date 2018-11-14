@@ -432,6 +432,9 @@ function getInitLoggedTime() {
     return savedData;
 }
 
+
+$(window).on("stepFwdClicked_BeforeStep_save", save);
+
 //saves current video to config
 function save() {
     console.log('videotagging.frames', videotagging.frames, videotagging.src);
