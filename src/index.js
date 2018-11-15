@@ -18,7 +18,10 @@ var saveState,
     videotagging,
     detection,
     trackingExtension,
-    assetFolder; 
+    assetFolder;
+
+let loggedTime = []
+let loggedTimeState;
 
 $(document).ready(() => {//init confirm keys figure out why this doesn't work
   $('#inputtags').tagsinput({confirmKeys: [13, 32, 44, 45, 46, 59, 188]});
@@ -101,9 +104,9 @@ ipcRenderer.on('help', (event, message) => {
 ipcRenderer.on('filter', (event, message) => {
     var filter = message;
 
-    if (videotagging !== null) { 
+    if (videotagging !== null) {
       videotagging.addFilterByName(filter);
-    }    
+    }
 });
 
 ipcRenderer.on('export', (event, message) => {
@@ -121,7 +124,7 @@ ipcRenderer.on('export-tags', (event, exportConfig) => {
   detection.export(videotagging.imagelist, exportConfig.exportFormat, exportConfig.exportUntil, exportConfig.exportPath, testSetSize, () => {
      if(!videotagging.imagelist){
        videotagging.video.oncanplay = updateVisitedFrames;
-      } 
+      }
      $(".loader").remove();
   });
 });
@@ -156,14 +159,14 @@ ipcRenderer.on('review-model', (event, reviewModelConfig) => {
         }
         if(!videotagging.imagelist){
           videotagging.video.oncanplay = updateVisitedFrames;
-        }      
-        $(".loader").remove();        
+        }
+        $(".loader").remove();
     });
   }
   else {
       alert(`No model found! Please make sure you put your model in the following directory: ${modelLocation}`)
   }
-      
+
 });
 
 ipcRenderer.on('review-model-endpoint', (event, reviewModelConfig) => {
@@ -174,9 +177,9 @@ ipcRenderer.on('review-model-endpoint', (event, reviewModelConfig) => {
       }
       if(!videotagging.imagelist){
         videotagging.video.oncanplay = updateVisitedFrames;
-      }      
-      $(".loader").remove();        
-    });    
+      }
+      $(".loader").remove();
+    });
 });
 
 
@@ -185,10 +188,68 @@ ipcRenderer.on('toggleTracking', (event, message) => {
     trackingExtension.stopTracking();
   } else {
     trackingExtension.startTracking();
-  } 
+  }
   trackingEnabled = !trackingEnabled;
 
 });
+
+$(window).focus(setFocuslog);
+
+$(window).click(setFocuslog);
+
+$(window).blur(setBlurlog);
+
+let globalTimeout;
+$(window).mousemove(event => {
+    clearTimeout(globalTimeout);
+    globalTimeout = setTimeout(setBlurlog, 1000*60);
+});
+
+$(window).on('playPauseAnnotationEvn', function(event, checked) {
+    if (checked) {
+        setFocuslog();
+    }else {
+        setBlurlog();
+    }
+});
+
+function setBlurlog(){
+    const frames = videotagging ? videotagging.frames : undefined;
+    if (loggedTime.length && loggedTime[loggedTime.length - 1].type === 'focus') {
+        loggedTime.push(setLoggedTime('blur', frames));
+        saveLoggedTime();
+    }
+}
+
+function setFocuslog(){
+    if (!$( '#check-annotation' ).prop( "checked" )) {
+        return;
+    }
+    if (!loggedTime.length ||
+        loggedTime.length && loggedTime[loggedTime.length - 1].type === 'blur') {
+        loggedTime.push(setLoggedTime('focus'));
+    }
+}
+
+function setLoggedTime(type, frames={}) {
+    countedFrames = [].concat(...Object.values(frames)).length || undefined;
+    return {
+        unixtime: new Date().getTime(),
+        datetime: new Date().toString(),
+        countedFrames,
+        type
+    }
+}
+
+function saveLoggedTime(){
+    //Save the logger loggedTimeState
+    if (videotagging && videotagging.src) {
+        fs.writeFile(`${videotagging.src}.log.json`, JSON.stringify(loggedTime, null, '\t'), (err) => {
+            if (err) throw err;
+            console.log('The file logger has been saved!');
+        });
+    }
+}
 
 //drag and drop support
 document.addEventListener('drop', (e) => {
@@ -244,15 +305,15 @@ window.addEventListener('keyup', (e) => {
     if(!e.shiftKey){
       videotagging.multiselection = false;
     }
-  
+
     var selectedRegions = videotagging.getSelectedRegions();
-    
+
     if(e.ctrlKey && (e.code == 'KeyC' || e.code == 'KeyX' || e.code == 'KeyA')){
 
       var widthRatio = videotagging.overlay.width / videotagging.sourceWidth;
       var heightRatio = videotagging.overlay.height / videotagging.sourceHeight;
       var content = [];
-      
+
       if(e.code == 'KeyA'){ //select all
         videotagging.selectAllRegions();
         selectedRegions = videotagging.getSelectedRegions();
@@ -269,14 +330,14 @@ window.addEventListener('keyup', (e) => {
           }
         )
 
-        if(e.code == 'KeyX'){ //cut 
+        if(e.code == 'KeyX'){ //cut
           videotagging.deleteRegionById(currentRegion.UID);
           videotagging.showAllRegions();
         }
       }
 
       clipboard.writeText(JSON.stringify(content));
-    } 
+    }
     if(e.shiftKey && e.code == 'Delete') {
       e.stopPropagation();
       deleteFrame()
@@ -294,7 +355,7 @@ window.addEventListener('keyup', (e) => {
       console.log('ERROR: No bounding box in clipboard')
     }
   }
-}, true); 
+}, true);
 
 //adds a loading animation to the tagger
 function addLoader(appendTo = "#videoWrapper") {
@@ -370,7 +431,7 @@ function openPath(pathName, isDir, isRecords = false) {
     $('#video-tagging-container').hide();
     $('#load-form-container').show();
     $('#framerateGroup').show();
-    
+
     //set title indicator
     $('title').text(`Tagging Job Configuration: ${path.basename(pathName, path.extname(pathName))}`);
     $('#inputtags').tagsinput('removeAll');//remove all previous tag labels
@@ -384,7 +445,7 @@ function openPath(pathName, isDir, isRecords = false) {
     }
 
     assetFolder = path.join(path.dirname(pathName), `${path.basename(pathName, path.extname(pathName))}_output`);
-    
+
     try {
       var config = require(`${pathName}.json`);
       saveState = JSON.stringify(config);
@@ -402,7 +463,7 @@ function openPath(pathName, isDir, isRecords = false) {
       if (config.scd){
         document.getElementById("scd").checked = config.scd;
       }
-      
+
     } catch (e) {
       console.log(`Error loading save file ${e.message}`);
     }
@@ -418,11 +479,11 @@ function openPath(pathName, isDir, isRecords = false) {
         $(".loader").remove();
       });
     }
-    
+
     async function loadTagger (e) {
       if(framerate.validity.valid && inputtags.validity.valid) {
         $('.bootstrap-tagsinput').last().removeClass( "invalid" );
-        
+
         videotagging = document.getElementById('video-tagging'); //find out why jquery doesn't play nice with polymer
         videotagging.regiontype = $('#regiontype').val();
         videotagging.multiregions = 1;
@@ -430,9 +491,9 @@ function openPath(pathName, isDir, isRecords = false) {
         videotagging.inputtagsarray = $('#inputtags').val().replace(/\s/g,'').split(',');
         videotagging.video.currentTime = 0;
         videotagging.framerate = $('#framerate').val();
-        videotagging.src = ''; // ensures reload if user opens same video 
+        videotagging.src = ''; // ensures reload if user opens same video
 
-        if (config) {  
+        if (config) {
           if (config.tag_colors){
             videotagging.optionalTags.colors = config.tag_colors;
           }
@@ -467,7 +528,7 @@ function openPath(pathName, isDir, isRecords = false) {
             visitedFramesNumber =  new Set();
           }
           // visitedFrames =  (isDir) ? new Set([pathName]) : new Set();
-        } 
+        }
 
         if (isDir){
             $('title').text(`Image Tagging Job: ${path.dirname(pathName)}`); //set title indicator
@@ -475,7 +536,7 @@ function openPath(pathName, isDir, isRecords = false) {
 
             //get list of images in directory
             var files = fs.readdirSync(pathName);
-            
+
             if(isRecords){
               videotagging.imagelist = files.filter(function(file){
                 return file.match(/.(tfrecord)$/i);
@@ -498,7 +559,7 @@ function openPath(pathName, isDir, isRecords = false) {
               if(!isNaN(Array.from(visitedFrames)[0])){
                 visitedFramesNumber = visitedFrames;
                 visitedFrames = new Set(Array.from(visitedFramesNumber).map(frame => videotagging.imagelist[parseInt(frame)]))
-                
+
                 //Replace the keys of the frames object
                 Object.keys(videotagging.inputframes).map(function(key, index) {
                   videotagging.inputframes[videotagging.imagelist[key].split(path.sep).pop()] = videotagging.inputframes[key];
@@ -507,7 +568,7 @@ function openPath(pathName, isDir, isRecords = false) {
               }
 
               videotagging.imagelist = videotagging.imagelist.map((filepath) => {return path.join(pathName,filepath)});
-              videotagging.src = pathName; 
+              videotagging.src = pathName;
               //track visited frames
               $("#video-tagging").off("stepFwdClicked-AfterStep", updateVisitedFrames);
               $("#video-tagging").on("stepFwdClicked-AfterStep", () => {
@@ -531,13 +592,13 @@ function openPath(pathName, isDir, isRecords = false) {
             });
 
 
-              //auto-save 
+              //auto-save
               $("#video-tagging").off("stepFwdClicked-BeforeStep");
               $("#video-tagging").on("stepFwdClicked-BeforeStep", save);
 
               $("#video-tagging").off("stepBwdClicked-BeforeStep");
               $("#video-tagging").on("stepBwdClicked-BeforeStep", save);
-              
+
             } else {
               alert("No files were in the selected directory. Please choose an Image directory.");
                 return folderSelected();
@@ -553,14 +614,14 @@ function openPath(pathName, isDir, isRecords = false) {
           }
           //init region tracking
           trackingExtension = new VideoTaggingTrackingExtension({
-              videotagging: videotagging, 
+              videotagging: videotagging,
               trackingFrameRate: 15,
               method: $('#suggestiontype').val(),
               enableRegionChangeDetection: document.getElementById("scd").checked,
               enableSceneChangeDetection: document.getElementById("scd").checked,
               saveHandler: save
           });
-          videotagging.video.oncanplay = updateVisitedFrames; 
+          videotagging.video.oncanplay = updateVisitedFrames;
           //track visited frames
           trackingExtension.startTracking();
         }
@@ -568,7 +629,8 @@ function openPath(pathName, isDir, isRecords = false) {
         //init detection
         //detection = new DetectionExtension(videotagging, visitedFramesNumber);
         detection = new DetectionExtension(videotagging, visitedFrames);
-        
+        loggedTime = getInitLoggedTime();
+
         $('#load-form-container').hide();
         $('#video-tagging-container').show();
 
@@ -580,6 +642,21 @@ function openPath(pathName, isDir, isRecords = false) {
     }
 }
 
+function getInitLoggedTime() {
+    const savedData = [];
+    try {
+        savedData.push(
+            ...JSON.parse(fs.readFileSync(`${videotagging.src}.log.json`))
+        );
+    } catch (e) {
+        console.log(`Error loading save file ${e.message}`);
+    } finally {
+        savedData.push(setLoggedTime('focus'));
+        console.log('savedData', savedData);
+    }
+    return savedData;
+}
+
 function getRegionsFromRecord(tfRecord){
   if(videotagging.sourceWidth == 0 || videotagging.sourceHeight == 0){
     videotagging.sourceWidth = tfRecord.features.feature['image/width'].int64List.value[0];
@@ -589,13 +666,13 @@ function getRegionsFromRecord(tfRecord){
   let heightRatio = videotagging.overlay.height / videotagging.sourceHeight;
 
   for (let i = 0; i < tfRecord.features.feature['image/object/bbox/xmin'].floatList.value.length; i++) {
-    
+
     let x1 = tfRecord.features.feature['image/object/bbox/xmin'].floatList.value[i] * videotagging.sourceWidth * widthRatio;
     let y1 = tfRecord.features.feature['image/object/bbox/ymin'].floatList.value[i] * videotagging.sourceHeight * heightRatio;
     let x2 = tfRecord.features.feature['image/object/bbox/xmax'].floatList.value[i] * videotagging.sourceWidth * widthRatio;
     let y2 = tfRecord.features.feature['image/object/bbox/ymax'].floatList.value[i] * videotagging.sourceHeight * heightRatio;
     videotagging.createRegion(x1,y1,x2,y2)
-    
+
     console.log(`decoded: ${decode_Uint8(tfRecord.features.feature['image/object/class/text'].bytesList.value[i])}`)
     videotagging.addTagsToRegion([decode_Uint8(tfRecord.features.feature['image/object/class/text'].bytesList.value[i])]);
   }
@@ -625,7 +702,7 @@ async function writeRecord(recordPath, example = null, outputDir = null) {
       let difficult_obj = [];
       let truncated = [];
       let poses = [];
-      
+
       regions.forEach(region => {
         xmin.push(region.x1 / videotagging.sourceWidth)
         ymin.push(region.y1 / videotagging.sourceHeight)
@@ -721,7 +798,7 @@ async function readRecord(pathname, recordName) {
   // The reader auto-closes after it reaches the end of the file.
 }
 
-//saves current video to config 
+//saves current video to config
 function save() {
     var saveObject = {
       "frames" : videotagging.frames,
@@ -740,7 +817,7 @@ function save() {
     var saveLock;
     if (!saveLock) {
       saveLock = true;
-      fs.writeFile(`${videotagging.src}.json`, JSON.stringify(saveObject), () => {
+      fs.writeFile(`${videotagging.src}.json`, JSON.stringify(saveObject, null, '\t'), () => {
         saveState = JSON.stringify(saveObject);
         console.log("saved");
       });
@@ -763,7 +840,7 @@ function save() {
           ymax.push(region.y2 / videotagging.sourceHeight)
           tags.push(encode_Uint8(region.tags[0]))
         })
-        
+
         videotagging.currTFRecord.features.feature['image/object/bbox/xmin'].floatList.value = xmin;
         videotagging.currTFRecord.features.feature['image/object/bbox/xmax'].floatList.value = xmax;
         videotagging.currTFRecord.features.feature['image/object/bbox/ymin'].floatList.value = ymin;
@@ -783,7 +860,7 @@ function save() {
 
 function encode_Uint8(s) {
   if (!("TextEncoder" in window)) alert("Sorry, this browser does not support TextEncoder...");
-  
+
   var enc = new TextEncoder();
   return enc.encode(s)
   // return Uint8Array.from(s);
@@ -797,13 +874,13 @@ function deleteFrame(){
   if(!videotagging.imagelist) return;
   if(!confirm('This will delete the image from disk and remove it\'s tags from the save file.\nAre you sure you want to delete this image?')) return;
   let currFrameId = videotagging.getCurrentFrameId();
-  
+
   try{
     fs.unlinkSync(videotagging.imagelist[videotagging.imageIndex]);
     delete videotagging.frames[currFrameId];
-    
+
     videotagging.imagelist.splice(videotagging.imageIndex,1)
-    
+
     var delObject = {
       "frames" : videotagging.frames,
       "framerate":$('#framerate').val(),
@@ -813,7 +890,7 @@ function deleteFrame(){
       "visitedFrames": Array.from(visitedFrames),
       "tag_colors" : videotagging.optionalTags.colors,
     };
-  
+
     var delLock;
     if (!delLock){
       delLock = true;
@@ -827,11 +904,11 @@ function deleteFrame(){
       }
       setTimeout(()=>{delLock=false;}, 500);
     }
-  
+
     if(videotagging.imageIndex > 0){
       videotagging.imageIndex--
     }
-  
+
     videotagging.stepFwdClicked({});
   }
   catch(error){

@@ -23,21 +23,22 @@
     <div id="controlWrapper" class="controlWrapper">
       <playback-control id="playSpeedControl" class="playSpeedControl"></playback-control>
       <div id='videoWrapper' class="relativeDiv">
+            <div id="freezeVideoWrapper" style="background: rgba(255, 165, 0, 0.15);z-index: 500;visibility:hidden;cursor: not-allowed;"></div>
             <svg id="selectionZone" class="selectionZoneStyle" >
                     <defs>
                             <filter id="black-glow">
-                                <feGaussianBlur in="SourceAlpha" stdDeviation="2"/> 
+                                <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
                                 <feOffset dx="0" dy="0" result="offsetblur"/>
                                 <feComponentTransfer>
                                     <feFuncA type="linear" slope="0.8"/>
                                 </feComponentTransfer>
-                                <feMerge> 
+                                <feMerge>
                                     <feMergeNode/>
-                                    <feMergeNode in="SourceGraphic"/> 
+                                    <feMergeNode in="SourceGraphic"/>
                                 </feMerge>
                             </filter>
-                        </defs>                  
-                </svg>  
+                        </defs>
+                </svg>
               <canvas id="overlay"  on-click='videoClicked' class="overlaystyle" width="100" height="100" >
                       Your browser does not support the HTML5 canvas location.
               </canvas>
@@ -52,7 +53,7 @@
       <div id="videoControls" class="videoControls">
         <div id="seekDiv" class="seekWrapper">
             <input id="seekBar" class="seek clickableControl" type="range" min='0' value="0" step="any" onkeydown="return false;"  required />
-        </div>      
+        </div>
         <table id="videoControlsTable" class="videoControlsTable">
             <tr>
               <td class="videoControlCell simpleControl clickableControl">
@@ -69,6 +70,11 @@
               </td>
               <td class="videoControlCell simpleControl clickableControl">
                 <span id="clearRegions"  title="clear tags" class="glyphicon glyphicon-ban-circle taggingControls" on-click='clearRegions'></span>
+              </td>
+              <td class="videoControlCell simpleControl clickableControl">
+                <span id="play-pause-annotation"  title="play/pause annotation" class="taggingControls" on-click='playPauseAnnotation'>
+                    <label><input id="check-annotation" type="checkbox" checked><i class="glyphicon glyphicon-font"></i></label>
+                </span>
               </td>
               <td id="rotate" class="videoControlCell simpleControl clickableControl" style="display: none">
                 <span title="rotate right" class="glyphicon glyphicon-repeat taggingControls" on-click="rotate"></span>
@@ -109,7 +115,7 @@
 </template>
 <script>
 
-  
+
   Polymer({
     is: 'video-tagging',
     properties: {
@@ -132,7 +138,7 @@
     // Element Lifecycle
     ready: function() {
         const path = require('path');
-        
+
         this.frames = {}; //Holds the data of the tagged frames, their regions and tags
         this.seeking = false; //Flag for enabling control over the seek bar while the video is playing, see playingCallback function
         this.sequencePlaying = false; //Flag for holding playback state of an image sequence
@@ -201,12 +207,12 @@
             ]).then(function(modules){
                 self.CT = modules[0].CanvasTools;
 
-                let regionsManager = new self.CT.Region.RegionsManager(self.selectionZone, 
+                let regionsManager = new self.CT.Region.RegionsManager(self.selectionZone,
                     function() { },
                     function() { })
                 ;
 
-                self.areaSelector = new self.CT.Selection.AreaSelector(self.selectionZone, 
+                self.areaSelector = new self.CT.Selection.AreaSelector(self.selectionZone,
                     function(){
                         self.selectionZone.style.zIndex = 300;
                     },
@@ -223,7 +229,7 @@
                     self.areaSelector.disable();
                 };
 
-                regionsManager.onRegionSelected = function(id, multiselection) {                    
+                regionsManager.onRegionSelected = function(id, multiselection) {
                     self.selectRegion(id, multiselection);
                 };
 
@@ -254,7 +260,7 @@
         //Reset all variables to new src
         this.video.addEventListener( "loadedmetadata", init);
         var self = this;
-      
+
         function init() {
             self.controlWrapper.style.display = "grid";
             //Init variables and controls
@@ -268,28 +274,28 @@
             //self.snapToAspectRatio();
             //Init sliders
             self.volumeSlider.value = 0.5;
-            self.seekBar.max = self.video.duration;  
+            self.seekBar.max = self.video.duration;
 
-            // Update frame size to video size     
-            self.resetLayout();                          
+            // Update frame size to video size
+            self.resetLayout();
             let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
-            self.resizeFrame(scaleByPortrait, self.aspect);         
+            self.resizeFrame(scaleByPortrait, self.aspect);
 
-            self.playingCallback();   
+            self.playingCallback();
 
             //fix resize bug
             $(window).off("resize");
             $(window).resize( function(){
                 if (self.video.offsetWidth !== undefined){
                     //self.snapToAspectRatio();
-                    // Update frame size to video size  
-                    self.resetLayout();                  
-                    
+                    // Update frame size to video size
+                    self.resetLayout();
+
                     let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
                     self.resizeFrame(scaleByPortrait, self.aspect);
 
                     //resize the region boxes
-                    // self.showAllRegions();                    
+                    // self.showAllRegions();
                 }
             });
 
@@ -297,7 +303,7 @@
             if (self.keyUpEventsListenerBinded != null) {
                 window.removeEventListener("keyup", self.keyUpEventsListenerBinded);
             }
-            self.keyUpEventsListenerBinded = self.keyUpEventsListener.bind(self);        
+            self.keyUpEventsListenerBinded = self.keyUpEventsListener.bind(self);
             window.addEventListener("keyup", self.keyUpEventsListenerBinded, false);
         }
 
@@ -323,7 +329,7 @@
                  var seekToFrameId =  Math.floor(self.seekBar.value);//keep the frame in sync
                  self.seekToFrame(seekToFrameId);
             } else { //video handling
-                self.video.currentTime =  Math.floor(self.seekBar.value/self.frameTime) * self.frameTime;//keep the frame in sync 
+                self.video.currentTime =  Math.floor(self.seekBar.value/self.frameTime) * self.frameTime;//keep the frame in sync
             }
             self.playingCallback();
           });
@@ -355,7 +361,7 @@
       this.addEventListener("playSpeedSelected", function(e) {
             self.playback(e.detail.playbackValue, e.detail.playbackText);
           });
-      
+
         this.addEventListener("ontagschanged", (tagsStateEvent) => {
             let tags = tagsStateEvent.detail.selected;
             let currentRegionUID = this.selectedRegionId[0];
@@ -387,7 +393,7 @@
             case 39: // right
                 if (!e.ctrlKey) {
                     this.stepFwdClicked();
-                }            
+                }
                 break;
             case 68:// d for duplicate
                 let frameId = this.getCurrentFrameId();
@@ -461,7 +467,7 @@
                 this.frames[frameId] = [];
                 regions = this.frames[frameId];
             }
-        }         
+        }
 
         return regions;
     },
@@ -469,18 +475,18 @@
     getCurrentFrameNumber: function() {
       if (this.imagelist){
         return this.imageIndex;
-      } 
+      }
       return this.video.currentTime === 0 ? 1 : Math.ceil((this.video.currentTime - this.videoStartTime) * this.framerate) + 1 ;
     },
 
     getCurrentFrameId: function() {
       if (this.imagelist){
         return (this.imagelist[this.imageIndex].split(path.sep).pop());
-      } 
+      }
       return this.video.currentTime === 0 ? 1 : Math.ceil((this.video.currentTime - this.videoStartTime) * this.framerate) + 1 ;
     },
 
-    getCurrentFrameRegions: function() {   
+    getCurrentFrameRegions: function() {
         return this.getRegions(this.getCurrentFrameId());
     },
 
@@ -490,7 +496,7 @@
 
     getPrevFrameRegionsCopy: function() {
         if(this.imagelist){
-            return JSON.parse(JSON.stringify(this.getRegions(this.imagelist[this.prevFrameIndex].split(path.sep).pop())));    
+            return JSON.parse(JSON.stringify(this.getRegions(this.imagelist[this.prevFrameIndex].split(path.sep).pop())));
         } else {
             return JSON.parse(JSON.stringify(this.getRegions(this.prevFrameIndex)));
         }
@@ -507,7 +513,7 @@
                 i++
             }
         return region;
-    },        
+    },
 
     createRegion: function(x1, y1, x2, y2) {
         let widthRatio = this.overlay.width / this.sourceWidth;
@@ -552,7 +558,7 @@
     },
     buildTagsDescriptor: function(tags) {
 
-        
+
         let tagsDescriptor = null;
         let primaryTag = null;
         let secondaryTags = [];
@@ -565,7 +571,7 @@
                 let c = this.optionalTags.colors[this.inputtagsarray.indexOf(tags[i])];
                 let t = new this.CT.Base.Tags.Tag(tags[i], this.CT.Base.Tags.Tag.getHueFromColor(c) * 360);
                 secondaryTags.push(t)
-            }                
+            }
 
             tagsDescriptor = new this.CT.Base.Tags.TagsDescriptor(primaryTag, secondaryTags);
         }
@@ -611,10 +617,10 @@
                 if ((this.video.currentTime + this.frameTime) > this.video.duration ){
                     return;
                 }
-                if (!this.canMove ) return; 
+                if (!this.canMove ) return;
                 //if there are no unlabled tags move to next frame
                 this.video.currentTime += this.frameTime * (nextFrameOffset);
-                this.playingCallback();            
+                this.playingCallback();
             }
         }
     },
@@ -645,7 +651,7 @@
         var ry1 = y / heightRatio;
         var rx2 = (x + width) / widthRatio;
         var ry2 = (y + height) / heightRatio;
-        
+
         // back compatibility for v < 2.0
         region.x1 = rx1;
         region.y1 = ry1;
@@ -673,10 +679,10 @@
 
         if (id != "") {
             let region = this.getRegionById(id);
-            
+
             if(region && !this.selectedRegionId.includes(region.UID)) {
                 this.selectedRegionId.push(id);
-                
+
                 var tags = region.tags;
                 this.optionalTags.displaySelectedTags(tags);
             }
@@ -692,7 +698,7 @@
     deleteRegionById: function(id) {
         var regions = this.getCurrentFrameRegions();
         this.frames[this.getCurrentFrameId()] = regions.filter((r) => {return r.UID != id;});
-        //this.emitRegionToHost();        
+        //this.emitRegionToHost();
         if (id == this.selectedRegionId[0]) {
             this.selectedRegionId = [];
         }
@@ -703,6 +709,15 @@
           this.clearAllRegions();
           // this.showAllRegions();
           //this.emitRegionToHost();
+    },
+    playPauseAnnotation: function (e) {
+        const chValue = $( '#check-annotation' ).prop( "checked" );
+        if (chValue) {
+            $('#freezeVideoWrapper').css("visibility", "hidden");
+        }else {
+            $('#freezeVideoWrapper').css("visibility", "visible");
+        }
+        $(window).trigger('playPauseAnnotationEvn', [chValue]);
     },
     /**
        * @method emitRegionToHost
@@ -720,7 +735,7 @@
     registerRegion: function(x1, y1, x2, y2, regionUID, tags) {
         // Regions Manager
         let tagsDescriptor = this.buildTagsDescriptor(tags);
-        
+
         this.regionsManager.addRegion(regionUID, {x:x1, y:y1}, {x:x2, y:y2}, tagsDescriptor);
 
         this.selectRegion(regionUID);
@@ -797,8 +812,8 @@
                 if (region.UID == undefined) {
                     region.UID = this.generateUniqueId();
                 }
-                
-                this.registerRegion(x1, y1, x2, y2, region.UID, region.tags); ; //add frame                  
+
+                this.registerRegion(x1, y1, x2, y2, region.UID, region.tags); ; //add frame
             }
             //Redraws all regions to ensure proper z-order stacking
             this.regionsManager.redrawAllRegions();
@@ -806,7 +821,7 @@
         //Clears areaSelector state when moving across frames
         this.regionsManager.onManipulationEnd();
     },
-    
+
     /**
        * @method addRegion
        * Adds a region to the array of regions per current frame.
@@ -814,7 +829,7 @@
        */
     addRegion: function(x1, y1, x2, y2) {
         this.resetEmptyFrame();//Clear empty frame logic
-        
+
         var region = {
             // relative for back compatiblity (v < 2.0)
             x1: x1,
@@ -831,11 +846,11 @@
                 y2: y2
             },
             UID: this.generateUniqueId(),
-            id: this.uniqueTagId++,            
+            id: this.uniqueTagId++,
             type: this.regiontype,
             tags: []
         };
-            
+
         var regions = this.getCurrentFrameRegions();
         //The array is populated and can contain multiple regions
         if(this.multiregions == 1 && regions) {
@@ -965,7 +980,7 @@
         }
         //$("#rotate").show();
         if(this.recordlist) {this.currTFRecord = this.recordlist[0]; this.changeImage(this.currTFRecord.features.feature['image/encoded'].bytesList.value[0], true);}
-        else this.changeImage(`url(file://${this.imagelist[this.imageIndex].replace(/\\/g,"/")})`); 
+        else this.changeImage(`url(file://${this.imagelist[this.imageIndex].replace(/\\/g,"/")})`);
         console.log(`url(file://${this.imagelist[this.imageIndex].replace(/\\/g,"/")})`);
         var self = this;
         self.frames = self.inputframes? self.inputframes:{};
@@ -973,13 +988,13 @@
         self.optionalTags.createTagControls(this.inputtagsarray);
 
         //self.resetLayout();
-        
+
         //bind keys (note this currently overrides any listener on the parent controls needs a more elegant way to work only when control is in focus)
         if (self.keyUpEventsListenerBinded != null) {
                 window.removeEventListener("keyup", self.keyUpEventsListenerBinded);
             }
-        self.keyUpEventsListenerBinded = self.keyUpEventsListener.bind(self);        
-        window.addEventListener("keyup", self.keyUpEventsListenerBinded, false); 
+        self.keyUpEventsListenerBinded = self.keyUpEventsListener.bind(self);
+        window.addEventListener("keyup", self.keyUpEventsListenerBinded, false);
     },
     changeImage: function(imageUrl, isRecord = false){
 
@@ -1004,7 +1019,7 @@
             self.aspect = self.sourceWidth / self.sourceHeight;
             //Size canvas as image
             let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
-            
+
             self.resizeFrame(scaleByPortrait, self.aspect);
 
             //Init variables and controls
@@ -1018,7 +1033,7 @@
 
                     let scaleByPortrait = ((videotagging.video.offsetWidth/videotagging.video.offsetHeight) >= self.aspect);
                     self.resizeFrame(scaleByPortrait, self.aspect);
-                    
+
                     //resize the region boxes
                     //self.showAllRegions();
                     //reposition selectedRegion Label
@@ -1037,8 +1052,8 @@
             this.overlay.style.left = leftShift;
             this.overlay.style.top  = '0px';
 
-            this.frameCanvas.style.margin = "0px " + leftShift; 
-            this.selectionZone.style.margin = "0px " + leftShift;  
+            this.frameCanvas.style.margin = "0px " + leftShift;
+            this.selectionZone.style.margin = "0px " + leftShift;
 
         } else {
             this.resizeFrameSize(this.video.offsetWidth, parseFloat(this.video.offsetWidth / imgRatio));
@@ -1047,8 +1062,8 @@
             this.overlay.style.top = topShift;
             this.overlay.style.left  = '0px';
 
-            this.frameCanvas.style.margin = topShift + " 0px"; 
-            this.selectionZone.style.margin = topShift + " 0px"; 
+            this.frameCanvas.style.margin = topShift + " 0px";
+            this.selectionZone.style.margin = topShift + " 0px";
         }
     },
 
@@ -1058,7 +1073,7 @@
 
         this.overlay.width = this.frameWidth;
         this.overlay.height = this.frameHeight;
-                        
+
         this.frameCanvas.width = this.frameWidth;
         this.frameCanvas.height = this.frameHeight;
 
@@ -1073,8 +1088,8 @@
         this.selectionZone.style.margin = "";
     },
 
-    disableImageDir: function() {       
-        $("#rotate").hide(); 
+    disableImageDir: function() {
+        $("#rotate").hide();
         $(window).off("resize");
         this.imageIndex = 0;
         this.imagelist = undefined;
@@ -1084,20 +1099,20 @@
 
     rotate: function() {
         this.rotation = (this.rotation + 90) % 360;
-        $('#vid').css("transform",`rotate(${this.rotation}deg)`);   
+        $('#vid').css("transform",`rotate(${this.rotation}deg)`);
     },
     seekToFrame: function(id, fireEvents = true) {
         if (this.checkRegionLabels()){
             //raise before next frame
-            this.prevFrameIndex = this.getCurrentFrameNumber();  
+            this.prevFrameIndex = this.getCurrentFrameNumber();
             if (this.imagelist){//image handling
                 if(this.imageIndex == id - 1) {
                     //Only fire before step if seeking to the next frame
-                    if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');    
+                    if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
                 }
                 if(this.imageIndex == id + 1) {
                     //Only fire before step if seeking to the previous frame
-                    if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-BeforeStep');    
+                    if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-BeforeStep');
                 }
                 if (id < this.imagelist.length-1) {
                     this.imageIndex = id;
@@ -1117,24 +1132,24 @@
                     //this.video.currentTime = this.video.duration;
                     return;
                 }
-                if (!this.canMove ) return; 
-                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');    
+                if (!this.canMove ) return;
+                if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
                 //if there are no unlabled tags move to next frame
                 this.video.currentTime += this.frameTime;
-                this.playingCallback();            
-            } 
+                this.playingCallback();
+            }
             //raise after next frame
             if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-AfterStep');
 
         }
     },
-    stepFwdClicked: function(fireEvents = true) {       
+    stepFwdClicked: function(fireEvents = true) {
         if (this.checkRegionLabels()){
             this.prevFrameIndex = this.getCurrentFrameNumber();
             this.cleanSelectedElements()
             //raise before next frame
-            if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');    
-            if (this.imagelist){//image handling 
+            if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-BeforeStep');
+            if (this.imagelist){//image handling
                 if (this.imageIndex < this.imagelist.length-1) {
                     this.imageIndex++;
                     if(this.recordlist){
@@ -1153,7 +1168,7 @@
                 //if there are no unlabled tags move to next frame
                 this.video.currentTime += this.frameTime;
                 this.playingCallback();
-            } 
+            }
             //raise after next frame
             if(fireEvents)$('#video-tagging').trigger('stepFwdClicked-AfterStep');
 
@@ -1161,9 +1176,9 @@
     },
     stepBwdClicked: function(fireEvents = true) {
         if (this.checkRegionLabels()){
-            this.prevFrameIndex = this.getCurrentFrameNumber();    
+            this.prevFrameIndex = this.getCurrentFrameNumber();
             this.cleanSelectedElements();
-            if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-BeforeStep'); 
+            if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-BeforeStep');
             if (this.imagelist){//image handling
                 if (this.imageIndex > 0) {
                     this.imageIndex--;
@@ -1175,7 +1190,7 @@
                 }
                     else this.changeImage(`url(file://${this.imagelist[this.imageIndex].replace(/\\/g,"/")})`);
                 }
-            } 
+            }
             if (this.video.currentTime > 0) {
                 if(!this.video.paused) {
                 this.pauseState();
@@ -1186,7 +1201,7 @@
                 }
             }
             if(fireEvents)$('#video-tagging').trigger('stepBwdClicked-AfterStep');
-        }    
+        }
     },
     videoSrcChanged: function(newValue, oldValue) {
           if(this.video){
@@ -1227,7 +1242,7 @@
         this.optionalTags.toggleEnableButtons(false);
         // $('canvas#overlay').imgAreaSelect({disable: true});//disable canvas
         var self = this;
-        
+
     },
     pauseState: function() {
         if(!this.imagelist) {
@@ -1243,7 +1258,7 @@
         this.optionalTags.toggleEnableButtons(false);
         // $('canvas#overlay').imgAreaSelect({disable: false});//enable canvas
     },
-    playingCallback: function() { 
+    playingCallback: function() {
         if (!this.imagelist){
             this.frameText.value = this.getCurrentFrameNumber();
             this.displayVideoTime();
@@ -1260,13 +1275,13 @@
             }
             // Update canvas image based on new video frame
             this.updateFrameCanvas(this.curImg);
-        }           
+        }
         this.showAllRegions();
     },
     playImageSquence: function() {
         if(this.imageIndex == this.imagelist.length - 1){
             this.pauseState();
-        } 
+        }
         if(this.sequencePlaying) {
             this.stepFwdClicked();
         }
@@ -1311,7 +1326,7 @@
     },
 
     addFilterByName(filterName, params) {
-        switch (filterName) {            
+        switch (filterName) {
             case "invert_filter": {
                 this.filterPipeline.addFilter(this.CT.Filter.InvertFilter);
                 this.playingCallback();
