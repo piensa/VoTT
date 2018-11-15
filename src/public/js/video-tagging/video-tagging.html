@@ -197,6 +197,12 @@
         this.aspect = 0;
         this.snapWidth = 0;
 
+        document.addEventListener('keydown', (event) => {
+            if (event.keyCode === 38) {
+                this.playPauseAnnotationClick();
+            }
+        });
+
       // svg canvas
         let self = this;
         this.selectionZone = document.getElementById("selectionZone");
@@ -709,6 +715,11 @@
           this.clearAllRegions();
           // this.showAllRegions();
           //this.emitRegionToHost();
+    },
+    playPauseAnnotationClick: function (e) {
+        const checkbox = $( '#check-annotation' );
+        checkbox[0].checked = !checkbox.prop( "checked" );
+        this.playPauseAnnotation();
     },
     playPauseAnnotation: function (e) {
         const chValue = $( '#check-annotation' ).prop( "checked" );
@@ -1350,6 +1361,8 @@
         }
     }
 });
+
+
 </script>
 <script src="../jquery/dist/jquery.min.js"></script>
 <script src="../moment/moment.js"></script>
