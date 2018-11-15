@@ -883,7 +883,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                             },
                             {
                                 rule: `.regionStyle.${this.styleId}:hover  .primaryTagRectStyle`,
-                                style: `fill: ${this.tags.primary.colorHighlight}; 
+                                style: `fill: ${this.tags.primary.colorHighlight};
                                 stroke: #fff;`
                             },
                             {
@@ -1117,12 +1117,12 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.menuGroup = Snap(menuSVG).paper;
                     this.menuGroup.addClass("menuLayer");
                     this.rearrangeMenuPosition();
-                    this.menuRect = this.menuGroup.rect(0, 0, this.mw, this.mh, 5, 5);
-                    this.menuRect.addClass("menuRectStyle");
+                    // this.menuRect = this.menuGroup.rect(0, 0, this.mw, this.mh, 5, 5);
+                    // this.menuRect.addClass("menuRectStyle");
                     this.menuItemsGroup = this.menuGroup.g();
                     this.menuItemsGroup.addClass("menuItems");
                     this.menuItems = new Array();
-                    this.menuGroup.add(this.menuRect);
+                    // this.menuGroup.add(this.menuRect);
                     this.menuGroup.add(this.menuItemsGroup);
                     this.menuGroup.mouseover((e) => {
                         this.onManipulationBegin();
