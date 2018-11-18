@@ -652,7 +652,6 @@ function getInitLoggedTime() {
         console.log(`Error loading save file ${e.message}`);
     } finally {
         savedData.push(setLoggedTime('focus'));
-        console.log('savedData', savedData);
     }
     return savedData;
 }

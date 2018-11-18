@@ -35,6 +35,12 @@
     fill: #fff;
 }
 
+.primaryTagTextStyleBoxId {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 10pt;
+    fill: #000;
+}
+
 .primaryTagTextBGStyle {
     stroke-width: 0;
     fill: rgba(0, 0, 0, 0.5);

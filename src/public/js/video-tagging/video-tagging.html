@@ -153,6 +153,7 @@
         this.rotation = 0;
         this.prevFrameIndex = 0;
         this.multiselection = false;
+        this.boxIdState = [];
 
         //Frame view size
         this.frameWidth = 0;
@@ -411,9 +412,27 @@
             case 38:
                 this.playPauseAnnotationClick();
                 break;
+            case 40:
+                this.lockSelectedBox();
+                break;
             default: return; // exit this handler for other keys
-            }
+        }
         e.preventDefault(); // prevent the default action (scroll / move caret)
+    },
+    lockSelectedBox: function () {
+        const selectedId = this.selectedRegionId[0];
+        const selectedRegion = this.getCurrentFrameRegions().find(reg => reg.UID === selectedId);
+
+        if (!selectedRegion) {
+            return;
+        }
+
+        this.boxIdState.forEach(st => {
+            if (st.boxId === selectedRegion.boxId) {
+                st.locked = !st.locked;
+            }
+        });
+        console.log('this.boxIdState', this.boxIdState, selectedRegion);
     },
 
     keyUpEventsListenerBinded: null,
@@ -451,7 +470,6 @@
             r.y1 = Math.max(0, r.y1 - dy);
             r.y2 = Math.min(this.frameHeight, r.y2 + dy);
         }
-
         this.createRegion(r.x1, r.y1, r.x2, r.y2);
     },
 
@@ -528,7 +546,7 @@
         var ry2 = y2 / heightRatio;
 
         var region = this.addRegion(rx1, ry1, rx2, ry2);//Add to in-memory collection
-        this.registerRegion(x1, y1, x2, y2, region.UID, region.tags); //add frame
+        this.registerRegion(x1, y1, x2, y2, region.UID, region.tags, region.boxId); //add frame
 
         //if there is only one tag enable it by default
         if ($(`#${this.optionalTags.id}`).find('.tagButtons').size() == 1){
@@ -740,11 +758,10 @@
        * Adds a transparent div to the region, the size of the region.
        * Used for click events, hover, etc..
        */
-    registerRegion: function(x1, y1, x2, y2, regionUID, tags) {
+    registerRegion: function(x1, y1, x2, y2, regionUID, tags, boxId="rR") {
         // Regions Manager
         let tagsDescriptor = this.buildTagsDescriptor(tags);
-
-        this.regionsManager.addRegion(regionUID, {x:x1, y:y1}, {x:x2, y:y2}, tagsDescriptor);
+        this.regionsManager.addRegion(regionUID, {x:x1, y:y1}, {x:x2, y:y2}, tagsDescriptor, boxId);
 
         this.selectRegion(regionUID);
     },
@@ -821,7 +838,7 @@
                     region.UID = this.generateUniqueId();
                 }
 
-                this.registerRegion(x1, y1, x2, y2, region.UID, region.tags); ; //add frame
+                this.registerRegion(x1, y1, x2, y2, region.UID, region.tags, region.boxId); ; //add frame
             }
             //Redraws all regions to ensure proper z-order stacking
             this.regionsManager.redrawAllRegions();
@@ -830,6 +847,31 @@
         this.regionsManager.onManipulationEnd();
     },
 
+    registerBoxIdState: function (regions) {
+        const lastBoxId = regions.length ? regions[regions.length - 1].boxId : 0;
+        let boxId;
+
+        if (this.boxIdState.length === 0) {
+            this.boxIdState.push({
+                boxId: 1,
+                locked: false
+            });
+        }
+        for (let boxState of this.boxIdState) {
+            if (!boxState.locked && boxState.boxId > lastBoxId) {
+                boxId = boxState.boxId;
+                break;
+            }
+        }
+        if (!boxId) {
+            boxId = this.boxIdState[this.boxIdState.length-1].boxId + 1;
+            this.boxIdState.push({
+                boxId,
+                locked: false
+            });
+        }
+        return boxId;
+    },
     /**
        * @method addRegion
        * Adds a region to the array of regions per current frame.
@@ -860,6 +902,8 @@
         };
 
         var regions = this.getCurrentFrameRegions();
+
+        region.boxId = this.registerBoxIdState(regions);
         //The array is populated and can contain multiple regions
         if(this.multiregions == 1 && regions) {
             region.name = regions.length + 1;

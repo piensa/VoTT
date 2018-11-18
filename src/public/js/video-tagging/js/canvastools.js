@@ -761,11 +761,13 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                 }
             }
             class TagsElement {
-                constructor(paper, x, y, rect, tags, styleId, styleSheet, tagsUpdateOptions) {
+                constructor(paper, id, x, y, rect, tags, styleId, styleSheet, tagsUpdateOptions, boxId) {
                     this.styleSheet = null;
                     this.rect = rect;
                     this.x = x;
                     this.y = y;
+                    this.ID = id;
+                    this.boxId = boxId;
                     this.styleId = styleId;
                     this.styleSheet = styleSheet;
                     this.paper = paper;
@@ -779,6 +781,11 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.primaryTagRect.addClass("primaryTagRectStyle");
                     this.primaryTagText = paper.text(0, 0, "");
                     this.primaryTagText.addClass("primaryTagTextStyle");
+
+                    this.primaryTagText2 = paper.text(0, 0, "");
+                    this.primaryTagText2.addClass("primaryTagTextStyleBoxId");
+                    this.primaryTagText2.node.innerHTML = this.boxId;
+
                     this.textBox = this.primaryTagText.getBBox();
                     this.primaryTagTextBG = paper.rect(0, 0, 0, 0);
                     this.primaryTagTextBG.addClass("primaryTagTextBGStyle");
@@ -787,6 +794,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.secondaryTags = [];
                     this.tagsGroup.add(this.primaryTagRect);
                     this.tagsGroup.add(this.primaryTagTextBG);
+                    this.tagsGroup.add(this.primaryTagText2);
                     this.tagsGroup.add(this.primaryTagText);
                     this.tagsGroup.add(this.secondaryTagsGroup);
                     this.updateTags(tags, this.tagsUpdateOptions);
@@ -945,8 +953,12 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                             x: p.x + 5,
                             y: p.y + this.textBox.height
                         });
+                        this.primaryTagText2.attr({
+                            x: p.x + -15,
+                            y: p.y + this.textBox.height
+                        });
                         this.primaryTagTextBG.attr({
-                            x: p.x + 1,
+                            x: p.x + -20,
                             y: p.y + 1
                         });
                         if (this.secondaryTags && this.secondaryTags.length > 0) {
@@ -1148,6 +1160,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     item.click((e) => {
                         actor(this.region);
                     });
+
                     this.menuItemsGroup.add(item);
                     this.menuItems.push(item);
                 }
@@ -1234,13 +1247,14 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                 }
             }
             class RegionElement {
-                constructor(paper, rect, boundRect = null, id, tagsDescriptor, onManipulationBegin, onManipulationEnd, tagsUpdateOptions) {
+                constructor(paper, rect, boundRect = null, id, tagsDescriptor, onManipulationBegin, onManipulationEnd, tagsUpdateOptions, boxId='RE') {
                     this.isSelected = false;
                     this.styleSheet = null;
                     this.x = 0;
                     this.y = 0;
                     this.rect = rect;
                     this.ID = id;
+                    this.boxId = boxId;
                     this.tagsDescriptor = tagsDescriptor;
                     if (boundRect !== null) {
                         this.boundRects = {
@@ -1259,7 +1273,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                         };
                     }
                     this.regionID = this.s8();
-                    this.styleID = `region_${this.regionID}_style`;
+                    this.styleID = `region_${this.ID}_style`;
                     this.styleSheet = this.insertStyleSheet();
                     this.tagsUpdateOptions = tagsUpdateOptions;
                     this.buildOn(paper);
@@ -1270,7 +1284,18 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.regionGroup.addClass(this.styleID);
                     this.anchors = new AnchorsElement(paper, this.x, this.y, this.rect, this.boundRects.host, this.onInternalChange.bind(this), this.onManipulationBegin, this.onManipulationEnd);
                     this.drag = new DragElement(paper, this.x, this.y, this.rect, this.boundRects.self, this.onInternalChange.bind(this), this.onManipulationBegin, this.onManipulationEnd);
-                    this.tags = new TagsElement(paper, this.x, this.y, this.rect, this.tagsDescriptor, this.styleID, this.styleSheet, this.tagsUpdateOptions);
+                    this.tags = new TagsElement(
+                        paper,
+                        this.ID,
+                        this.x,
+                        this.y,
+                        this.rect,
+                        this.tagsDescriptor,
+                        this.styleID,
+                        this.styleSheet,
+                        this.tagsUpdateOptions,
+                        this.boxId
+                    );
                     this.regionGroup.add(this.tags.tagsGroup);
                     this.regionGroup.add(this.drag.dragGroup);
                     this.regionGroup.add(this.anchors.anchorsGroup);
@@ -1363,9 +1388,9 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.regionManagerLayer.addClass("regionManager");
                     this.menuLayer = paper.g();
                     this.menuLayer.addClass("menuManager");
+
                     this.menu = new MenuElement(paper, 0, 0, new Rect(0, 0), this.paperRect, this.onManipulationBegin_local.bind(this), this.onManipulationEnd_local.bind(this));
                     this.menu.addAction("delete", "trash", (region) => {
-                        console.log(region.regionID);
                         this.deleteRegion(region);
                         this.menu.hide();
                     });
@@ -1459,13 +1484,23 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                         }
                     });
                 }
-                addRegion(id, pointA, pointB, tagsDescriptor) {
+                addRegion(id, pointA, pointB, tagsDescriptor, boxId) {
                     this.menu.hide();
                     let x = (pointA.x < pointB.x) ? pointA.x : pointB.x;
                     let y = (pointA.y < pointB.y) ? pointA.y : pointB.y;
                     let w = Math.abs(pointA.x - pointB.x);
                     let h = Math.abs(pointA.y - pointB.y);
-                    let region = new RegionElement(this.paper, new Rect(w, h), this.paperRect, id, tagsDescriptor, this.onManipulationBegin_local.bind(this), this.onManipulationEnd_local.bind(this), this.tagsUpdateOptions);
+                    let region = new RegionElement(
+                        this.paper,
+                        new Rect(w, h),
+                        this.paperRect,
+                        id,
+                        tagsDescriptor,
+                        this.onManipulationBegin_local.bind(this),
+                        this.onManipulationEnd_local.bind(this),
+                        this.tagsUpdateOptions,
+                        boxId
+                    );
                     region.move(new Point2D(x, y));
                     region.onChange = this.onRegionUpdate.bind(this);
                     this.unselectRegions();
@@ -1474,9 +1509,18 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.regions.push(region);
                     this.menu.showOnRegion(region);
                 }
-                drawRegion(x, y, rect, id, tagsDescriptor) {
+                drawRegion(x, y, rect, id, tagsDescriptor, boxId='dR') {
                     this.menu.hide();
-                    let region = new RegionElement(this.paper, rect, this.paperRect, id, tagsDescriptor, this.onManipulationBegin_local.bind(this), this.onManipulationEnd_local.bind(this), this.tagsUpdateOptions);
+                    let region = new RegionElement(
+                        this.paper,
+                        rect,
+                        this.paperRect,
+                        id, tagsDescriptor,
+                        this.onManipulationBegin_local.bind(this),
+                        this.onManipulationEnd_local.bind(this),
+                        this.tagsUpdateOptions,
+                        boxId
+                    );
                     region.area = rect.height * rect.width;
                     region.move(new Point2D(x, y));
                     region.onChange = this.onRegionUpdate.bind(this);
@@ -1493,7 +1537,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.deleteAllRegions();
                     let selectedID = "";
                     for (var i = 0; i < sr.length; i++) {
-                        this.drawRegion(sr[i].x, sr[i].y, sr[i].rect, sr[i].ID, sr[i].tags.tags);
+                        this.drawRegion(sr[i].x, sr[i].y, sr[i].rect, sr[i].ID, sr[i].tags.tags, sr[i].boxId);
                         if (sr[i].isSelected) {
                             selectedID = sr[i].ID;
                         }
