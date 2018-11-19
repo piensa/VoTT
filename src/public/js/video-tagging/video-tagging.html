@@ -224,6 +224,25 @@
                 );
 
                 regionsManager.onManipulationEnd = function() {
+
+                    if (!self.boxIdState.length) {
+                        const tempBoxState = [];
+                        Object.values(self.frames).map(frame => {
+                            if (frame.length) {
+                                Object.values(frame).map(box => {
+                                    tempBoxState[box.boxId-1] = box.locked;
+                                });
+                            }
+                        });
+
+                        self.boxIdState = tempBoxState.map( (st, i) => {
+                            return {
+                                boxId: i + 1,
+                                locked:  st
+                            }
+                        });
+                    }
+
                     self.areaSelector.enable();
                 };
                 regionsManager.onManipulationBegin = function() {
