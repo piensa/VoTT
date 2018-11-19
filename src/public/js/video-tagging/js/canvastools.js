@@ -1247,7 +1247,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                 }
             }
             class RegionElement {
-                constructor(paper, rect, boundRect = null, id, tagsDescriptor, onManipulationBegin, onManipulationEnd, tagsUpdateOptions, boxId='RE') {
+                constructor(paper, rect, boundRect = null, id, tagsDescriptor, onManipulationBegin, onManipulationEnd, tagsUpdateOptions, boxId='RE', locked) {
                     this.isSelected = false;
                     this.styleSheet = null;
                     this.x = 0;
@@ -1274,6 +1274,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     }
                     this.regionID = this.s8();
                     this.styleID = `region_${this.ID}_style`;
+                    this.locked = locked;
                     this.styleSheet = this.insertStyleSheet();
                     this.tagsUpdateOptions = tagsUpdateOptions;
                     this.buildOn(paper);
@@ -1282,6 +1283,9 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.regionGroup = paper.g();
                     this.regionGroup.addClass("regionStyle");
                     this.regionGroup.addClass(this.styleID);
+                    if (this.locked) {
+                        this.regionGroup.addClass('boxLocked');
+                    }
                     this.anchors = new AnchorsElement(paper, this.x, this.y, this.rect, this.boundRects.host, this.onInternalChange.bind(this), this.onManipulationBegin, this.onManipulationEnd);
                     this.drag = new DragElement(paper, this.x, this.y, this.rect, this.boundRects.self, this.onInternalChange.bind(this), this.onManipulationBegin, this.onManipulationEnd);
                     this.tags = new TagsElement(
@@ -1484,7 +1488,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                         }
                     });
                 }
-                addRegion(id, pointA, pointB, tagsDescriptor, boxId) {
+                addRegion(id, pointA, pointB, tagsDescriptor, boxId, locked) {
                     this.menu.hide();
                     let x = (pointA.x < pointB.x) ? pointA.x : pointB.x;
                     let y = (pointA.y < pointB.y) ? pointA.y : pointB.y;
@@ -1499,7 +1503,8 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                         this.onManipulationBegin_local.bind(this),
                         this.onManipulationEnd_local.bind(this),
                         this.tagsUpdateOptions,
-                        boxId
+                        boxId,
+                        locked
                     );
                     region.move(new Point2D(x, y));
                     region.onChange = this.onRegionUpdate.bind(this);
@@ -1509,7 +1514,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.regions.push(region);
                     this.menu.showOnRegion(region);
                 }
-                drawRegion(x, y, rect, id, tagsDescriptor, boxId='dR') {
+                drawRegion(x, y, rect, id, tagsDescriptor, boxId='dR', locked) {
                     this.menu.hide();
                     let region = new RegionElement(
                         this.paper,
@@ -1519,7 +1524,8 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                         this.onManipulationBegin_local.bind(this),
                         this.onManipulationEnd_local.bind(this),
                         this.tagsUpdateOptions,
-                        boxId
+                        boxId,
+                        locked
                     );
                     region.area = rect.height * rect.width;
                     region.move(new Point2D(x, y));
@@ -1532,12 +1538,19 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                         this.redrawAllRegions();
                     }
                 }
-                redrawAllRegions() {
+                redrawAllRegions(regions) {
+                    const lockTable = {};
+                    if (regions) {
+                        for (let region of regions) {
+                            lockTable[region.boxId] = region.locked;
+                        }
+                    }
                     let sr = this.regions;
                     this.deleteAllRegions();
                     let selectedID = "";
                     for (var i = 0; i < sr.length; i++) {
-                        this.drawRegion(sr[i].x, sr[i].y, sr[i].rect, sr[i].ID, sr[i].tags.tags, sr[i].boxId);
+                        sr[i].locked = regions ? lockTable[sr[i].boxId] : sr[i].locked;
+                        this.drawRegion(sr[i].x, sr[i].y, sr[i].rect, sr[i].ID, sr[i].tags.tags, sr[i].boxId, sr[i].locked);
                         if (sr[i].isSelected) {
                             selectedID = sr[i].ID;
                         }

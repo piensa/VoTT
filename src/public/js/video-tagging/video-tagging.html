@@ -430,9 +430,11 @@
         this.boxIdState.forEach(st => {
             if (st.boxId === selectedRegion.boxId) {
                 st.locked = !st.locked;
+                selectedRegion.locked = st.locked;
+                this.regionsManager.redrawAllRegions(this.getCurrentFrameRegions());
+                return;
             }
         });
-        console.log('this.boxIdState', this.boxIdState, selectedRegion);
     },
 
     keyUpEventsListenerBinded: null,
@@ -546,7 +548,7 @@
         var ry2 = y2 / heightRatio;
 
         var region = this.addRegion(rx1, ry1, rx2, ry2);//Add to in-memory collection
-        this.registerRegion(x1, y1, x2, y2, region.UID, region.tags, region.boxId); //add frame
+        this.registerRegion(x1, y1, x2, y2, region.UID, region.tags, region.boxId, region.locked); //add frame
 
         //if there is only one tag enable it by default
         if ($(`#${this.optionalTags.id}`).find('.tagButtons').size() == 1){
@@ -758,10 +760,10 @@
        * Adds a transparent div to the region, the size of the region.
        * Used for click events, hover, etc..
        */
-    registerRegion: function(x1, y1, x2, y2, regionUID, tags, boxId="rR") {
+    registerRegion: function(x1, y1, x2, y2, regionUID, tags, boxId="rR", locked=false) {
         // Regions Manager
         let tagsDescriptor = this.buildTagsDescriptor(tags);
-        this.regionsManager.addRegion(regionUID, {x:x1, y:y1}, {x:x2, y:y2}, tagsDescriptor, boxId);
+        this.regionsManager.addRegion(regionUID, {x:x1, y:y1}, {x:x2, y:y2}, tagsDescriptor, boxId, locked);
 
         this.selectRegion(regionUID);
     },
@@ -838,7 +840,7 @@
                     region.UID = this.generateUniqueId();
                 }
 
-                this.registerRegion(x1, y1, x2, y2, region.UID, region.tags, region.boxId); ; //add frame
+                this.registerRegion(x1, y1, x2, y2, region.UID, region.tags, region.boxId, region.locked); ; //add frame
             }
             //Redraws all regions to ensure proper z-order stacking
             this.regionsManager.redrawAllRegions();
@@ -898,7 +900,8 @@
             UID: this.generateUniqueId(),
             id: this.uniqueTagId++,
             type: this.regiontype,
-            tags: []
+            tags: [],
+            locked: false
         };
 
         var regions = this.getCurrentFrameRegions();

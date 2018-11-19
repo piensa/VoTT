@@ -41,6 +41,10 @@
     fill: #000;
 }
 
+.boxLocked rect{
+    fill: #cccccc4f !important;
+}
+
 .primaryTagTextBGStyle {
     stroke-width: 0;
     fill: rgba(0, 0, 0, 0.5);
