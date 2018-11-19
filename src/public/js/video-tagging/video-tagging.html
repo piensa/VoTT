@@ -739,11 +739,18 @@
 
     deleteRegionById: function(id) {
         var regions = this.getCurrentFrameRegions();
+        const region = regions.find(r => r.UID === id);
         this.frames[this.getCurrentFrameId()] = regions.filter((r) => {return r.UID != id;});
         //this.emitRegionToHost();
         if (id == this.selectedRegionId[0]) {
             this.selectedRegionId = [];
         }
+
+        this.boxIdState.forEach(box => {
+            if (box.boxId === region.boxId) {
+                box.locked = false;
+            }
+        });
     },
 
     clearRegions: function(e) {
