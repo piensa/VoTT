@@ -829,7 +829,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                                         height: this.textBox.height + 5
                                     });
                                     this.primaryTagText.attr({
-                                        x: this.x + 5,
+                                        x: this.x + 16,
                                         y: this.y + this.textBox.height,
                                         visibility: "visible"
                                     });
@@ -842,7 +842,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                                         height: Math.min(10, this.rect.height)
                                     });
                                     this.primaryTagText.attr({
-                                        x: this.x + 5,
+                                        x: this.x + 16,
                                         y: this.y + this.textBox.height,
                                         visibility: "hidden"
                                     });
@@ -950,15 +950,15 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                             y: p.y
                         });
                         this.primaryTagText.attr({
-                            x: p.x + 5,
+                            x: p.x + 16,
                             y: p.y + this.textBox.height
                         });
                         this.primaryTagText2.attr({
-                            x: p.x + -15,
-                            y: p.y + this.textBox.height
+                            x: p.x + 2,
+                            y: p.y + this.textBox.height + 2
                         });
                         this.primaryTagTextBG.attr({
-                            x: p.x + -20,
+                            x: p.x + 0,
                             y: p.y + 1
                         });
                         if (this.secondaryTags && this.secondaryTags.length > 0) {
