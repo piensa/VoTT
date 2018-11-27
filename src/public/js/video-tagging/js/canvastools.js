@@ -89,13 +89,13 @@ define("Base/CanvasTools.Base.Tags", ["require", "exports"], function (require, 
                     }
                     get colorHighlight() {
                         if (this.__colorHighlight == "") {
-                            this.__colorHighlight = `hsla(${this.colorHue.toString()}, 80%, 40%, 0.3)`;
+                            this.__colorHighlight = `hsla(${this.colorHue.toString()}, 80%, 40%, 0.1)`;
                         }
                         return this.__colorHighlight;
                     }
                     get colorShadow() {
                         if (this.__colorShadow == "") {
-                            this.__colorShadow = `hsla(${this.colorHue.toString()}, 50%, 30%, 0.2)`;
+                            this.__colorShadow = `hsla(${this.colorHue.toString()}, 50%, 30%, 0.02)`;
                         }
                         return this.__colorShadow;
                     }
