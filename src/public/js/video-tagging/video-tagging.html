@@ -434,9 +434,23 @@
             case 40:
                 this.lockSelectedBox();
                 break;
+            case 72:
+                this.hiddenOtherBoxes();
             default: return; // exit this handler for other keys
         }
         e.preventDefault(); // prevent the default action (scroll / move caret)
+    },
+    hiddenOtherBoxes: function() {
+        const selectedId = this.selectedRegionId[0];
+        const visibility = $('.regionManager').css('visibility');
+
+        if ( visibility === 'visible') {
+            $('.regionManager').css('visibility', 'hidden');
+            $(`.regionManager .region_${selectedId}_style .tagsLayer rect`).css('visibility', 'visible');
+        }else if(visibility === 'hidden') {
+            $('.regionManager').css('visibility', 'visible');
+            $(`.regionManager .tagsLayer rect`).removeAttr('style');
+        }
     },
     lockSelectedBox: function () {
         const selectedId = this.selectedRegionId[0];
