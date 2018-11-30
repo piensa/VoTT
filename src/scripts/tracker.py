@@ -1,47 +1,75 @@
 import cv2
 import json
+import optparse
 import os
 
-def create_rect(box, tuples=False):
+
+def create_rect(box):
     x1, y1 = int(box['x1']), int(box['y1'])
     x2, y2 = int(box['x2']), int(box['y2'])
 
-    if tuples is False:
-        return (x1, y1, x2 - x1, y2 - y1)
+    return x1, y1, x2, y2
 
-    return (x1, y1), (x2, y2)
+
+def create_writer(capture):
+    fourcc = cv2.VideoWriter_fourcc(*'X264')
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_count = int(cap.get(cv2.CAP_PROP_FPS))
+
+    writer = cv2.VideoWriter('output.avi',
+                             fourcc,
+                             frame_count,
+                             (width, height))
+
+    return writer
 
 
 def get_boxes(frame_data):
     return [f['box'] for f in frame_data]
 
 
+def parse_options():
+    parser = optparse.OptionParser()
+    parser.add_option('-v', '--video',
+                      dest='video_path',
+                      default=None)
+    parser.add_option('-j', '--json',
+                      dest='json_path',
+                      default=None)
+    parser.add_option('-w', '--write',
+                      dest='write',
+                      action='store_true',
+                      default=False)
+    options, remainder = parser.parse_args()
+
+    # Check for errors.
+    if options.video_path is None: 
+        raise Exception('Undefined video')
+    if options.json_path is None:
+        raise Exception('Undefined json_file')
+
+    return options
+
+
 def Main():
-    video_path = '/Users/jorge/Videos/test'
+    options = parse_options()
 
     # Open VideoCapture.
-    cap = cv2.VideoCapture(os.path.join(video_path, 'video.mp4'))
+    cap = cv2.VideoCapture(options.video_path)
 
     # Load json file with annotations.
-    with open(os.path.join(video_path, 'data.json'), 'r') as f:
+    with open(options.json_path, 'r') as f:
         data = json.load(f)['frames']
 
     # Create iterator which stores the frame keys each 60 frames.
     frame_key = [*data.keys()].__iter__()
 
+    if options.write:
+        writer = create_writer(cap)
+
     frame_no = 0
-
-
-    fourcc = cv2.VideoWriter_fourcc(*'X264')
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-
-    writer = cv2.VideoWriter('output.avi', fourcc,
-                             int(cap.get(cv2.CAP_PROP_FPS)),
-                             (width, height))
-
     while True:
-        print(frame_no)
         flag, img = cap.read()
 
         # Create list of trackers each 60 frames.
@@ -50,11 +78,10 @@ def Main():
             multi_tracker = cv2.MultiTracker_create()
 
             for box in boxes:
-                multi_tracker.add(cv2.TrackerCSRT_create(), img,
-                                 create_rect(box, False))
-
-            p1, p2 = create_rect(box, True)
-            cv2.rectangle(img, p1, p2, (0, 255, 0), 2, 1)
+                x1, y1, x2, y2 = create_rect(box)
+                w, h = x2 - x1, y2 - y1
+                multi_tracker.add(cv2.TrackerCSRT_create(), img, (x1, y1, w, h))
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 1)
 
         else:
             success, boxes = multi_tracker.update(img)
@@ -64,13 +91,19 @@ def Main():
                 p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
                 cv2.rectangle(img, p1, p2, (0, 255, 0), 2, 1)
 
-        if frame_no < int(cap.get(cv2.CAP_PROP_FRAME_COUNT)):
+        if options.write:
             writer.write(img)
         else:
-            writer.release()
-            cap.release()
-            exit()
+            cv2.imshow('frame', img)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
+
         frame_no += 1
+
+    cap.release()
+    if options.write:
+        writer.release()
+
 
 if __name__ == '__main__':
     Main()
