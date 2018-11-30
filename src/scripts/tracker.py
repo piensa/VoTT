@@ -13,9 +13,9 @@ def create_rect(box):
 
 def create_writer(capture):
     fourcc = cv2.VideoWriter_fourcc(*'X264')
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_count = int(cap.get(cv2.CAP_PROP_FPS))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_count = int(capture.get(cv2.CAP_PROP_FPS))
 
     writer = cv2.VideoWriter('output.avi',
                              fourcc,
@@ -31,6 +31,7 @@ def get_params(frame_data):
 
     return boxes, ids
 
+
 def parse_options():
     parser = optparse.OptionParser()
     parser.add_option('-v', '--video',
@@ -38,6 +39,9 @@ def parse_options():
                       default=None)
     parser.add_option('-j', '--json',
                       dest='json_path',
+                      default=None)
+    parser.add_option('-u', '--until',
+                      type='int',
                       default=None)
     parser.add_option('-w', '--write',
                       dest='write',
@@ -110,6 +114,8 @@ def Main():
             cv2.imshow('frame', img)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
+        if frame_no == options.until:
+            break
         frame_no += 1
 
     cap.release()
