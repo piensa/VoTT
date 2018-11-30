@@ -25,9 +25,11 @@ def create_writer(capture):
     return writer
 
 
-def get_boxes(frame_data):
-    return [f['box'] for f in frame_data]
+def get_params(frame_data):
+    boxes = [f['box'] for f in frame_data]
+    ids = [str(f['boxId']) for f in frame_data]
 
+    return boxes, ids
 
 def parse_options():
     parser = optparse.OptionParser()
@@ -68,21 +70,27 @@ def Main():
     if options.write:
         writer = create_writer(cap)
 
+    font = cv2.FONT_HERSHEY_SIMPLEX
     frame_no = 0
     while True:
         flag, img = cap.read()
 
         # Create list of trackers each 60 frames.
         if frame_no % 60 == 0:
-            boxes = get_boxes(data.get(frame_key.__next__()))
+            boxes, ids = get_params(data.get(frame_key.__next__()))
             multi_tracker = cv2.MultiTracker_create()
 
-            for box in boxes:
+            for i, box in enumerate(boxes):
                 x1, y1, x2, y2 = create_rect(box)
-                w, h = x2 - x1, y2 - y1
-                multi_tracker.add(cv2.TrackerCSRT_create(), img, (x1, y1, w, h))
-                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 1)
+                retval = multi_tracker.add(cv2.TrackerCSRT_create(),
+                                           img,
+                                           (x1, y1, x2 - x1, y2 - y1))
 
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 1)
+                cv2.putText(img, ids[i], (x1, y1 - 10), font, 1,
+                            (0, 0, 0), 5, cv2.LINE_AA)
+                cv2.putText(img, ids[i], (x1, y1 - 10), font, 1,
+                            (0, 255, 0), 1, cv2.LINE_AA)
         else:
             success, boxes = multi_tracker.update(img)
             # draw tracked objects
@@ -90,6 +98,11 @@ def Main():
                 p1 = (int(newbox[0]), int(newbox[1]))
                 p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
                 cv2.rectangle(img, p1, p2, (0, 255, 0), 2, 1)
+                cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
+                            (0, 0, 0), 5, cv2.LINE_AA)
+                cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
+                            (0, 255, 0), 1, cv2.LINE_AA)
+
 
         if options.write:
             writer.write(img)
@@ -97,7 +110,6 @@ def Main():
             cv2.imshow('frame', img)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
-
         frame_no += 1
 
     cap.release()
