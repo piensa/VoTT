@@ -78,6 +78,8 @@ def Main():
     frame_no = 0
     while True:
         flag, img = cap.read()
+        if frame_no % 200 == 0:
+            print('Processed {0} frames'.format(frame_no))
 
         # Create list of trackers each 60 frames.
         if frame_no % 60 == 0:
