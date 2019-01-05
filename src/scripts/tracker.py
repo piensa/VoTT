@@ -4,9 +4,9 @@ import optparse
 import os
 
 
-def check_color(crossed):
-    if crossed:
-        return (0, 0, 255)
+def check_color():#crossed):
+    # if crossed:
+    #     return (0, 0, 255)
     return (0, 255, 0)
 
 
@@ -34,9 +34,9 @@ def create_writer(capture):
 def get_params(frame_data):
     boxes = [f['box'] for f in frame_data]
     ids = [str(f['boxId']) for f in frame_data]
-    crossed = [True if f['crossed'] else False for f in frame_data]
+    # crossed = [True if f['crossed'] else False for f in frame_data]
 
-    return boxes, ids, crossed
+    return boxes, ids#, crossed
 
 
 def parse_options():
@@ -57,7 +57,7 @@ def parse_options():
     options, remainder = parser.parse_args()
 
     # Check for errors.
-    if options.video_path is None: 
+    if options.video_path is None:
         raise Exception('Undefined video')
     if options.json_path is None:
         raise Exception('Undefined json_file')
@@ -83,14 +83,16 @@ def Main():
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     frame_no = 0
+    crossed =False
     while True:
-        flag, img = cap.read()
-        if frame_no % 200 == 0:
+        flag, img_ = cap.read()
+
+        if frame_no % 10 == 0:
             print('Processed {0} frames'.format(frame_no))
 
-        # Create list of trackers each 60 frames.
-        if frame_no % 60 == 0:
-            boxes, ids, crossed = get_params(data.get(frame_key.__next__()))
+        if (frame_no) % 6 == 0:
+            img = img_.copy()
+            boxes, ids = get_params(data.get(frame_key.__next__()))
             multi_tracker = cv2.MultiTracker_create()
 
             for i, box in enumerate(boxes):
@@ -98,25 +100,26 @@ def Main():
                 retval = multi_tracker.add(cv2.TrackerCSRT_create(),
                                            img,
                                            (x1, y1, x2 - x1, y2 - y1))
-                crossed_color = check_color(crossed[i])
+                crossed_color = check_color()#crossed[i])
                 cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
                 cv2.putText(img, ids[i], (x1, y1 - 10), font, 1,
                             (0, 0, 0), 5, cv2.LINE_AA)
                 cv2.putText(img, ids[i], (x1, y1 - 10), font, 1,
                             crossed_color, 1, cv2.LINE_AA)
-        else:
-            success, boxes = multi_tracker.update(img)
-            # draw tracked objects
-            for i, newbox in enumerate(boxes):
-                p1 = (int(newbox[0]), int(newbox[1]))
-                p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
+        # else:
+        #     img = img_no_edit.copy()
+        #     success, boxes = multi_tracker.update(img)
+        #     # draw tracked objects
+        #     for i, newbox in enumerate(boxes):
+        #         p1 = (int(newbox[0]), int(newbox[1]))
+        #         p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
 
-                crossed_color = check_color(crossed[i])
-                cv2.rectangle(img, p1, p2, crossed_color, 2, 1)
-                cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
-                            (0, 0, 0), 5, cv2.LINE_AA)
-                cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
-                            crossed_color, 1, cv2.LINE_AA)
+        #         crossed_color = check_color()#crossed[i])
+        #         cv2.rectangle(img, p1, p2, crossed_color, 2, 1)
+        #         cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
+        #                     (0, 0, 0), 5, cv2.LINE_AA)
+        #         cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
+        #                     crossed_color, 1, cv2.LINE_AA)
 
 
         if options.write:
@@ -136,4 +139,3 @@ def Main():
 
 if __name__ == '__main__':
     Main()
-

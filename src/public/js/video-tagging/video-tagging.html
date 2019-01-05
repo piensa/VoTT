@@ -227,20 +227,19 @@
 
                     if (!self.boxIdState.length) {
                         const tempBoxState = [];
-                        Object.values(self.frames).map(frame => {
-                            if (frame.length) {
-                                Object.values(frame).map(box => {
-                                    tempBoxState[box.boxId-1] = box.locked;
-                                });
-                            }
-                        });
 
-                        self.boxIdState = tempBoxState.map( (st, i) => {
-                            return {
-                                boxId: i + 1,
-                                locked:  st
-                            }
-                        });
+                        self.boxIdState = Object.keys(self.frames)
+                            .map(i => self.frames[i].map(box => ({
+                                boxId: box.boxId,
+                                locked: box.locked,
+                                frameId: Number(i)
+                            })))
+                            .reduce((acc, x) => acc.concat(x), [])
+                            .reduce( (acc, box) => {
+                                acc[box.boxId] = Object.assign({}, box)
+                                return acc;
+                            }, [])
+                            .filter(x => x);
                     }
 
                     self.areaSelector.enable();
@@ -460,8 +459,10 @@
             return;
         }
 
+        const currentFrame = this.getCurrentFrameId();
+
         this.boxIdState.forEach(st => {
-            if (st.boxId === selectedRegion.boxId) {
+            if (st.boxId === selectedRegion.boxId && st.frameId === currentFrame) {
                 st.locked = !st.locked;
                 selectedRegion.locked = st.locked;
                 this.regionsManager.redrawAllRegions(this.getCurrentFrameRegions());
@@ -891,17 +892,20 @@
 
     registerBoxIdState: function (regions) {
         const lastBoxId = regions.length ? regions[regions.length - 1].boxId : 0;
+        const frameId = this.getCurrentFrameId();
         let boxId;
 
         if (this.boxIdState.length === 0) {
             this.boxIdState.push({
                 boxId: 1,
-                locked: false
+                locked: false,
+                frameId
             });
         }
         for (let boxState of this.boxIdState) {
             if (!boxState.locked && boxState.boxId > lastBoxId) {
                 boxId = boxState.boxId;
+                boxState.frameId = boxState.frameId > frameId ? boxState.frameId : frameId;
                 break;
             }
         }
@@ -909,7 +913,8 @@
             boxId = this.boxIdState[this.boxIdState.length-1].boxId + 1;
             this.boxIdState.push({
                 boxId,
-                locked: false
+                locked: false,
+                frameId
             });
         }
         return boxId;
