@@ -236,7 +236,20 @@
                             })))
                             .reduce((acc, x) => acc.concat(x), [])
                             .reduce( (acc, box) => {
-                                acc[box.boxId] = Object.assign({}, box)
+                                const lastFrameId = acc[box.boxId] ? acc[box.boxId].frameId : 0;
+                                acc[box.boxId] = Object.assign({}, acc[box.boxId], {
+                                    boxId: box.boxId,
+                                    frameId: box.frameId,
+                                    locked: box.locked
+                                });
+
+                                if(!acc[box.boxId].prevFrameId){
+                                    acc[box.boxId].prevFrameId = []
+                                }
+                                else {
+                                    acc[box.boxId].prevFrameId.push(lastFrameId)
+                                }
+
                                 return acc;
                             }, [])
                             .filter(x => x);
@@ -764,6 +777,8 @@
         this.boxIdState.forEach(box => {
             if (box.boxId === region.boxId) {
                 box.locked = false;
+                box.frameId = box.prevFrameId[box.prevFrameId.length -1];
+                box.prevFrameId = box.prevFrameId.slice(0, -1);
             }
         });
     },
@@ -891,30 +906,57 @@
     },
 
     registerBoxIdState: function (regions) {
-        const lastBoxId = regions.length ? regions[regions.length - 1].boxId : 0;
+        const lastBoxId = Math.max(...regions.map(x => x.boxId));
+
+        // List of registred boxIds { id: 1}
+        const regIds = regions.reduce(
+            (a, reg) => ({...a, [reg.boxId]: 1 }), {}
+        );
+
+        const missingBox = this.boxIdState.find(
+            ({boxId, locked}) => ( !regIds[boxId] && !locked)
+        );
+
         const frameId = this.getCurrentFrameId();
         let boxId;
 
+        // First BoxId
         if (this.boxIdState.length === 0) {
             this.boxIdState.push({
                 boxId: 1,
                 locked: false,
-                frameId
+                frameId,
+                prevFrameId: []
             });
         }
+
+        if(missingBox){
+            boxId = missingBox.boxId;
+            if(missingBox.frameId < frameId){
+                this.boxIdState[missingBox.boxId-1].prevFrameId.push(this.boxIdState[missingBox.boxId-1].frameId);
+                this.boxIdState[missingBox.boxId-1].frameId = frameId;
+            }
+            return boxId;
+        }
+
         for (let boxState of this.boxIdState) {
             if (!boxState.locked && boxState.boxId > lastBoxId) {
                 boxId = boxState.boxId;
-                boxState.frameId = boxState.frameId > frameId ? boxState.frameId : frameId;
+                if(boxState.frameId < frameId){
+                    boxState.prevFrameId.push(boxState.frameId);
+                    boxState.frameId = frameId;
+                }
                 break;
             }
         }
+        // New BoxId
         if (!boxId) {
             boxId = this.boxIdState[this.boxIdState.length-1].boxId + 1;
             this.boxIdState.push({
                 boxId,
                 locked: false,
-                frameId
+                frameId,
+                prevFrameId: []
             });
         }
         return boxId;
