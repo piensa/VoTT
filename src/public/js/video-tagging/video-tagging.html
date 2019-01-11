@@ -232,14 +232,14 @@
                             .map(i => self.frames[i].map(box => ({
                                 boxId: box.boxId,
                                 locked: box.locked,
-                                frameId: Number(i)
+                                currentFrameId: Number(i)
                             })))
                             .reduce((acc, x) => acc.concat(x), [])
                             .reduce( (acc, box) => {
-                                const lastFrameId = acc[box.boxId] ? acc[box.boxId].frameId : 0;
+                                const lastFrameId = acc[box.boxId] ? acc[box.boxId].currentFrameId : 0;
                                 acc[box.boxId] = Object.assign({}, acc[box.boxId], {
                                     boxId: box.boxId,
-                                    frameId: box.frameId,
+                                    currentFrameId: box.currentFrameId,
                                     locked: box.locked
                                 });
 
@@ -428,11 +428,11 @@
                 }
                 break;
             case 68:// d for duplicate
-                let frameId = this.getCurrentFrameId();
+                let currentFrameId = this.getCurrentFrameId();
                 if(this.imagelist){
-                    frameId = this.imageIndex
+                    currentFrameId = this.imageIndex
                 }
-                if (frameId > 0) {
+                if (currentFrameId > 0) {
                     this.frames[this.getCurrentFrameId()] = this.getPrevFrameRegionsCopy();
                 }
                 this.playingCallback();
@@ -475,7 +475,7 @@
         const currentFrame = this.getCurrentFrameId();
 
         this.boxIdState.forEach(st => {
-            if (st.boxId === selectedRegion.boxId && st.frameId === currentFrame) {
+            if (st.boxId === selectedRegion.boxId && st.currentFrameId === currentFrame) {
                 st.locked = !st.locked;
                 selectedRegion.locked = st.locked;
                 this.regionsManager.redrawAllRegions(this.getCurrentFrameRegions());
@@ -528,14 +528,14 @@
             .substring(1);
     },
 
-    getRegions: function(frameId) {
+    getRegions: function(currentFrameId) {
         let regions = null;
-        if (frameId || frameId == 0) {
-            regions = this.frames[frameId];
+        if (currentFrameId || currentFrameId == 0) {
+            regions = this.frames[currentFrameId];
 
             if (regions == undefined || regions == null) {
-                this.frames[frameId] = [];
-                regions = this.frames[frameId];
+                this.frames[currentFrameId] = [];
+                regions = this.frames[currentFrameId];
             }
         }
 
@@ -767,18 +767,24 @@
 
     deleteRegionById: function(id) {
         var regions = this.getCurrentFrameRegions();
+        const currentFrameId = this.getCurrentFrameId();
         const region = regions.find(r => r.UID === id);
-        this.frames[this.getCurrentFrameId()] = regions.filter((r) => {return r.UID != id;});
+        this.frames[currentFrameId] = regions.filter((r) => {return r.UID != id;});
         //this.emitRegionToHost();
         if (id == this.selectedRegionId[0]) {
             this.selectedRegionId = [];
         }
 
         this.boxIdState.forEach(box => {
-            if (box.boxId === region.boxId) {
+            if (box.boxId !== region.boxId) return;
+
+            if(box.currentFrameId === currentFrameId){
                 box.locked = false;
-                box.frameId = box.prevFrameId[box.prevFrameId.length -1];
+                box.currentFrameId = box.prevFrameId[box.prevFrameId.length -1];
                 box.prevFrameId = box.prevFrameId.slice(0, -1);
+            }
+            else {
+                box.prevFrameId = box.prevFrameId.filter(id => id !== currentFrameId)
             }
         });
     },
@@ -913,11 +919,12 @@
             (a, reg) => ({...a, [reg.boxId]: 1 }), {}
         );
 
+        // find the missing box in the current frame
         const missingBox = this.boxIdState.find(
             ({boxId, locked}) => ( !regIds[boxId] && !locked)
         );
 
-        const frameId = this.getCurrentFrameId();
+        const currentFrameId = this.getCurrentFrameId();
         let boxId;
 
         // First BoxId
@@ -925,26 +932,32 @@
             this.boxIdState.push({
                 boxId: 1,
                 locked: false,
-                frameId,
+                currentFrameId,
                 prevFrameId: []
             });
         }
 
         if(missingBox){
-            boxId = missingBox.boxId;
-            if(missingBox.frameId < frameId){
-                this.boxIdState[missingBox.boxId-1].prevFrameId.push(this.boxIdState[missingBox.boxId-1].frameId);
-                this.boxIdState[missingBox.boxId-1].frameId = frameId;
+            const i = missingBox.boxId - 1;
+            if(missingBox.currentFrameId < currentFrameId){
+                this.boxIdState[i].prevFrameId.push(
+                    this.boxIdState[i].currentFrameId
+                );
+                this.boxIdState[i].currentFrameId = currentFrameId;
             }
-            return boxId;
+            else{
+                const prevFrameId = [...this.boxIdState[i].prevFrameId, currentFrameId];
+                this.boxIdState[i].prevFrameId = prevFrameId.sort( (a, b) => a - b);
+            }
+            return missingBox.boxId;
         }
 
         for (let boxState of this.boxIdState) {
             if (!boxState.locked && boxState.boxId > lastBoxId) {
                 boxId = boxState.boxId;
-                if(boxState.frameId < frameId){
-                    boxState.prevFrameId.push(boxState.frameId);
-                    boxState.frameId = frameId;
+                if(boxState.currentFrameId < currentFrameId){
+                    boxState.prevFrameId.push(boxState.currentFrameId);
+                    boxState.currentFrameId = currentFrameId;
                 }
                 break;
             }
@@ -955,7 +968,7 @@
             this.boxIdState.push({
                 boxId,
                 locked: false,
-                frameId,
+                currentFrameId,
                 prevFrameId: []
             });
         }
