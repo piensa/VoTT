@@ -938,16 +938,15 @@
         }
 
         if(missingBox){
-            const i = missingBox.boxId - 1;
+            const box = this.boxIdState.find(b => b.boxId === missingBox.boxId);
+
             if(missingBox.currentFrameId < currentFrameId){
-                this.boxIdState[i].prevFrameId.push(
-                    this.boxIdState[i].currentFrameId
-                );
-                this.boxIdState[i].currentFrameId = currentFrameId;
+                box.prevFrameId.push(box.currentFrameId);
+                box.currentFrameId = currentFrameId;
             }
             else{
-                const prevFrameId = [...this.boxIdState[i].prevFrameId, currentFrameId];
-                this.boxIdState[i].prevFrameId = prevFrameId.sort( (a, b) => a - b);
+                const prevFrameId = [...box.prevFrameId, currentFrameId];
+                box.prevFrameId = prevFrameId.sort( (a, b) => a - b);
             }
             return missingBox.boxId;
         }
