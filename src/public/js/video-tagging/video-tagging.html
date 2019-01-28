@@ -475,11 +475,16 @@
         const currentFrame = this.getCurrentFrameId();
 
         this.boxIdState.forEach(st => {
-            if (st.boxId === selectedRegion.boxId && st.currentFrameId === currentFrame) {
+            if (st.boxId !== selectedRegion.boxId) return;
+
+            if(st.currentFrameId === currentFrame) {
                 st.locked = !st.locked;
                 selectedRegion.locked = st.locked;
                 this.regionsManager.redrawAllRegions(this.getCurrentFrameRegions());
                 return;
+            }
+            else {
+              alert(`El ultimo cuadro se encuentra en el frame: ${st.currentFrameId}`);
             }
         });
     },
@@ -918,11 +923,15 @@
         const regIds = regions.reduce(
             (a, reg) => ({...a, [reg.boxId]: 1 }), {}
         );
+        console.log('lastBoxId', lastBoxId)
+        console.log('regIds', regIds)
 
         // find the missing box in the current frame
         const missingBox = this.boxIdState.find(
             ({boxId, locked}) => ( !regIds[boxId] && !locked)
         );
+        console.log('this.boxIdState', this.boxIdState)
+        console.log('missingBox', missingBox)
 
         const currentFrameId = this.getCurrentFrameId();
         let boxId;
@@ -949,6 +958,29 @@
                 box.prevFrameId = prevFrameId.sort( (a, b) => a - b);
             }
             return missingBox.boxId;
+        }
+
+        const gapId = this.boxIdState
+          .reduce( (acc, el) => {
+              if (acc.found) return acc;
+              
+              if(acc.gap + 1 !== el.boxId){
+                acc.found = true;
+              }
+              acc.gap++;
+
+              return acc;
+
+          } , {gap: 0, found: false});
+
+        if(gapId.found){
+            this.boxIdState.push({
+                boxId: gapId.gap,
+                locked: false,
+                currentFrameId,
+                prevFrameId: []
+            });
+            return gapId.gap;
         }
 
         for (let boxState of this.boxIdState) {
