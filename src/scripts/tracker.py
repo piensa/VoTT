@@ -2,11 +2,12 @@ import cv2
 import json
 import optparse
 import os
+import time
 
 
-def check_color():#crossed):
-    # if crossed:
-    #     return (0, 0, 255)
+def check_color(crossed):
+    if crossed:
+        return (0, 0, 255)
     return (0, 255, 0)
 
 
@@ -23,9 +24,9 @@ def create_writer(capture):
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_count = int(capture.get(cv2.CAP_PROP_FPS))
 
-    writer = cv2.VideoWriter('output.avi',
+    writer = cv2.VideoWriter('output.mp4',
                              fourcc,
-                             frame_count,
+                             2,
                              (width, height))
 
     return writer
@@ -33,10 +34,10 @@ def create_writer(capture):
 
 def get_params(frame_data):
     boxes = [f['box'] for f in frame_data]
-    ids = [str(f['boxId']) for f in frame_data]
-    # crossed = [True if f['crossed'] else False for f in frame_data]
+    ids = [f['matchIds'] for f in frame_data]
+    crossed = [f['crossed'] for f in frame_data]
 
-    return boxes, ids#, crossed
+    return boxes, ids, crossed
 
 
 def parse_options():
@@ -57,7 +58,7 @@ def parse_options():
     options, remainder = parser.parse_args()
 
     # Check for errors.
-    if options.video_path is None:
+    if options.video_path is None: 
         raise Exception('Undefined video')
     if options.json_path is None:
         raise Exception('Undefined json_file')
@@ -75,61 +76,53 @@ def Main():
     with open(options.json_path, 'r') as f:
         data = json.load(f)['frames']
 
-    # Create iterator which stores the frame keys each 60 frames.
-    frame_key = [*data.keys()].__iter__()
-
     if options.write:
         writer = create_writer(cap)
 
     font = cv2.FONT_HERSHEY_SIMPLEX
-    frame_no = 0
-    crossed =False
+    frame_no = 1
     while True:
-        flag, img_ = cap.read()
-
-        if frame_no % 10 == 0:
+        wait_key = 25
+        flag, img = cap.read()
+        if frame_no % 120 == 0:
             print('Processed {0} frames'.format(frame_no))
 
-        if (frame_no) % 6 == 0:
-            img = img_.copy()
-            boxes, ids = get_params(data.get(frame_key.__next__()))
-            multi_tracker = cv2.MultiTracker_create()
+        if frame_no % 6 != 0:
+            frame_no += 1
+            continue
 
-            for i, box in enumerate(boxes):
-                x1, y1, x2, y2 = create_rect(box)
-                retval = multi_tracker.add(cv2.TrackerCSRT_create(),
-                                           img,
-                                           (x1, y1, x2 - x1, y2 - y1))
-                crossed_color = check_color()#crossed[i])
-                cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
-                cv2.putText(img, ids[i], (x1, y1 - 10), font, 1,
-                            (0, 0, 0), 5, cv2.LINE_AA)
-                cv2.putText(img, ids[i], (x1, y1 - 10), font, 1,
-                            crossed_color, 1, cv2.LINE_AA)
-        # else:
-        #     img = img_no_edit.copy()
-        #     success, boxes = multi_tracker.update(img)
-        #     # draw tracked objects
-        #     for i, newbox in enumerate(boxes):
-        #         p1 = (int(newbox[0]), int(newbox[1]))
-        #         p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
+        key = str(int(frame_no / 6 + 1))
 
-        #         crossed_color = check_color()#crossed[i])
-        #         cv2.rectangle(img, p1, p2, crossed_color, 2, 1)
-        #         cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
-        #                     (0, 0, 0), 5, cv2.LINE_AA)
-        #         cv2.putText(img, ids[i], (p1[0], p1[1] - 10), font, 1,
-        #                     crossed_color, 1, cv2.LINE_AA)
+        boxes = data.get(key)
 
+        # Create list of trackers each 60 frames.
+        boxes, ids, crossed = get_params(boxes)
+
+        for i, box in enumerate(boxes):
+            x1, y1, x2, y2 = create_rect(box)
+            if ids[i] == '4' or ids[i] == '16':
+                print(frame_no, key, box)
+                print((x1, y1, x2, y2))
+
+            crossed_color = check_color(crossed[i])
+            cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
+            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.7,
+                        (0, 0, 0), 5, cv2.LINE_AA)
+            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.7,
+                        crossed_color, 1, cv2.LINE_AA)
+        if '4' in ids or '16' in ids:
+            wait_key = 0
 
         if options.write:
             writer.write(img)
         else:
             cv2.imshow('frame', img)
-            if cv2.waitKey(25) & 0xFF == ord('q'):
+            if cv2.waitKey(wait_key) & 0xFF == ord('q'):
                 break
         if frame_no == options.until:
             break
+        # print(frame_no)
+        # import ipdb; ipdb.set_trace()
         frame_no += 1
 
     cap.release()
@@ -139,3 +132,4 @@ def Main():
 
 if __name__ == '__main__':
     Main()
+

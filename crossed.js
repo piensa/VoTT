@@ -1,17 +1,25 @@
 const fs = require('fs');
 
-const file = './out.20170927_prolix_downtown_ann_2-09-27-2017_10-50-16_idx00_2';
-const ext = '.mkv.mp4.json';
+const file = process.argv[2];
+const filecsv = process.argv[3];
 
-const vottfile = JSON.parse(fs.readFileSync(`${file}${ext}`));
+if(!file){
+    throw 'Add file parameter'
+}
+
+if(file.slice(-5) !== '.json'){
+    throw 'You must specify a json file'
+}
+
+const vottfile = JSON.parse(fs.readFileSync(file));
+const crossedList = fs.readFileSync(filecsv, 'utf8')
+                  .split('\n')
+                  .filter( ( _, i ) => i !== 0)
+                  .map( el => 
+                        el.split(',').map( n => Number(n))
+                  );
+
 const frameList = Object.keys(vottfile.frames).map(Number);
-
-const crossedList = [
-    5, 4, 10, 9, 3, 12, 17, 13, 16, 20, 21, 23,
-    26, 30, 24, 27, 28, 29, 32, 31, 50, 51, 47,
-    48, 49, 52, 53, 54, 55, 56, 57, 38, 58, 69,
-    70, 86, 95, 114, 115, 116
-]
 
 frameList.forEach(frameNumber => {
     const frame = vottfile.frames[frameNumber];
@@ -19,24 +27,33 @@ frameList.forEach(frameNumber => {
     frame.forEach(box => {
         box.crossed = false;
     });
-})
+});
 
 crossedList.map(crossed => {
+    [ boxId, iniFrame, finalFrame ] = crossed;
+
     frameList.forEach(frameNumber => {
         const frame = vottfile.frames[frameNumber];
         if(!frame.length) return;
 
         frame.forEach(box => {
-            if (box.boxId === crossed) {
+            if (
+                box.boxId === boxId &&
+                frameNumber >= iniFrame &&
+                frameNumber <= finalFrame
+            ) {
+
                 box.crossed = true;
-                console.log('box', box);
             }
         });
     });
 });
 
+// console.log(crossedList);
+
+
 fs.writeFileSync(
-	`./${file}_crossed${ext}`,
+	`./${file.slice(0,-5)}_crossed.json`,
 	JSON.stringify(vottfile, null, '\t')
 );
-console.log('Done!');
+console.log('Cross done!');
