@@ -923,17 +923,24 @@
         const regIds = regions.reduce(
             (a, reg) => ({...a, [reg.boxId]: 1 }), {}
         );
-        console.log('lastBoxId', lastBoxId)
-        console.log('regIds', regIds)
 
         // find the missing box in the current frame
         const missingBox = this.boxIdState.find(
             ({boxId, locked}) => ( !regIds[boxId] && !locked)
         );
-        console.log('this.boxIdState', this.boxIdState)
-        console.log('missingBox', missingBox)
+
+        const gapId = this.boxIdState
+          .map( el => el.boxId)
+          .sort( (a,b) => a - b)
+          .reduce( (acc, boxId) => {
+              if (acc.found) return acc;
+              if(acc.gap + 1 !== boxId) acc.found = true;
+              acc.gap++;
+              return acc;
+          } , {gap: 0, found: false});
 
         const currentFrameId = this.getCurrentFrameId();
+
         let boxId;
 
         // First BoxId
@@ -944,9 +951,10 @@
                 currentFrameId,
                 prevFrameId: []
             });
+            return 1;
         }
 
-        if(missingBox){
+        if( (missingBox && !gapId.found) || (missingBox && gapId.found && missingBox.boxId < gapId.gap) ){
             const box = this.boxIdState.find(b => b.boxId === missingBox.boxId);
 
             if(missingBox.currentFrameId < currentFrameId){
@@ -959,19 +967,6 @@
             }
             return missingBox.boxId;
         }
-
-        const gapId = this.boxIdState
-          .reduce( (acc, el) => {
-              if (acc.found) return acc;
-              
-              if(acc.gap + 1 !== el.boxId){
-                acc.found = true;
-              }
-              acc.gap++;
-
-              return acc;
-
-          } , {gap: 0, found: false});
 
         if(gapId.found){
             this.boxIdState.push({
@@ -993,9 +988,10 @@
                 break;
             }
         }
+
         // New BoxId
         if (!boxId) {
-            boxId = this.boxIdState[this.boxIdState.length-1].boxId + 1;
+            boxId = Math.max(...this.boxIdState.map(x => x.boxId)) + 1;
             this.boxIdState.push({
                 boxId,
                 locked: false,
