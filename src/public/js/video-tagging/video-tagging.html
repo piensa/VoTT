@@ -780,6 +780,8 @@
             this.selectedRegionId = [];
         }
 
+        let deleteID;
+
         this.boxIdState.forEach(box => {
             if (box.boxId !== region.boxId) return;
 
@@ -787,11 +789,17 @@
                 box.locked = false;
                 box.currentFrameId = box.prevFrameId[box.prevFrameId.length -1];
                 box.prevFrameId = box.prevFrameId.slice(0, -1);
+
+                if(!box.currentFrameId) deleteID = region.boxId;
             }
             else {
                 box.prevFrameId = box.prevFrameId.filter(id => id !== currentFrameId)
             }
         });
+
+        if (deleteID) {
+          this.boxIdState = this.boxIdState.filter( box => box.boxId !== deleteID);
+        }
     },
 
     clearRegions: function(e) {
