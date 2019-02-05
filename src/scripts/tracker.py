@@ -95,6 +95,9 @@ def Main():
 
         boxes = data.get(key)
 
+        if boxes == None:
+            boxes = []
+
         # Create list of trackers each 60 frames.
         boxes, ids, crossed = get_params(boxes)
 
@@ -106,9 +109,9 @@ def Main():
 
             crossed_color = check_color(crossed[i])
             cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
-            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.7,
+            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
                         (0, 0, 0), 5, cv2.LINE_AA)
-            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.7,
+            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
                         crossed_color, 1, cv2.LINE_AA)
         if '4' in ids or '16' in ids:
             wait_key = 0
