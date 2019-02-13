@@ -556,7 +556,7 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                     this.anchorsGroup.add(this.anchors.BL);
                     this.anchorsGroup.add(this.ghostAnchor);
                 }
-                createAnchor(paper, style = "", r = 3) {
+                createAnchor(paper, style = "", r = 2.5) {
                     let a = paper.circle(0, 0, r);
                     a.addClass("anchorStyle");
                     a.addClass(style);
@@ -954,8 +954,8 @@ define("regiontool", ["require", "exports", "Base/CanvasTools.Base.Rect", "Base/
                             y: p.y + this.textBox.height
                         });
                         this.primaryTagText2.attr({
-                            x: p.x + 2,
-                            y: p.y + this.textBox.height + 2
+                            x: p.x,
+                            y: p.y + this.textBox.height - 16
                         });
                         this.primaryTagTextBG.attr({
                             x: p.x + 0,
