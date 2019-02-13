@@ -37,11 +37,11 @@
 
 .primaryTagTextStyleBoxId {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 9pt;
+    font-size: 10pt;
     fill: #fff89a;
     stroke: #000000;
     font-weight: bold;
-    stroke-width: 0.8px;
+    stroke-width: 1px;
 }
 
 .boxLocked rect{
