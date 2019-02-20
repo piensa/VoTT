@@ -23,6 +23,7 @@ def create_writer(capture):
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_count = int(capture.get(cv2.CAP_PROP_FPS))
+
     writer = cv2.VideoWriter('output.mp4',
                              fourcc,
                              2,
@@ -82,20 +83,17 @@ def Main():
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     frame_no = 1
-
-    frameRate = 12;
-
     while True:
         wait_key = 25
         flag, img = cap.read()
         if frame_no % 120 == 0:
             print('Processed {0} frames'.format(frame_no))
 
-        if frame_no % (int(frameRate/2) + 1) != 0:
+        if frame_no % 6 != 0:
             frame_no += 1
             continue
 
-        key = str(int(frame_no / int(frameRate/2) + 1))
+        key = str(int(frame_no / 6 + 1))
 
         boxes = data.get(key)
 
@@ -107,6 +105,9 @@ def Main():
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = create_rect(box)
+            if ids[i] == '4' or ids[i] == '16':
+                print(frame_no, key, box)
+                print((x1, y1, x2, y2))
 
             crossed_color = check_color(crossed[i])
             cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
@@ -114,11 +115,14 @@ def Main():
                         (0, 0, 0), 5, cv2.LINE_AA)
             cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
                         crossed_color, 1, cv2.LINE_AA)
+        if '4' in ids or '16' in ids:
+            wait_key = 0
+
         if options.write:
             writer.write(img)
         else:
             cv2.imshow('frame', img)
-            if cv2.waitKey(0) & 0xFF == ord('q'):
+            if cv2.waitKey(wait_key) & 0xFF == ord('q'):
                 break
         if frame_no == options.until:
             break
@@ -135,4 +139,3 @@ def Main():
 
 if __name__ == '__main__':
     Main()
-
