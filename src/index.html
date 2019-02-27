@@ -46,6 +46,16 @@
     <div id ='load-form-container' style ="display: none">
       <h2>Tagging Job Configuration</h2> <hr>
 
+      <div class="form-group">
+        <label title="(Type of region selector to tag frames)">Camera position</label>
+        <select id="cameratype" class="form-control" style ="max-width: 8em">
+          <option selected="selected">Concat</option>
+          <option>Left</option>
+          <option>Center</option>
+          <option>Right</option>
+        </select>
+      </div>
+
       <div class="form-group" id="framerateGroup">
         <label title="(How many frames to extract per a second of video!)">Frame Extraction Rate (frames per a video second)</label>
         <input id="framerate" type="number" min="1" max="60" value="1" maxlength="3" size="3" class="form-control" style ="max-width: 5em"/>

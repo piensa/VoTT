@@ -120,6 +120,7 @@
     is: 'video-tagging',
     properties: {
       framerate: Number,
+      camera: String,
       videoduration: Number,
       videowidth: Number,
       videoheight: Number,
@@ -923,18 +924,32 @@
         //Clears areaSelector state when moving across frames
         this.regionsManager.onManipulationEnd();
     },
-
+    cameraSettings: function(camera){
+        const step = 3;
+        switch (camera) {
+            case 'Concat':
+                return {step: 1, before: 0};
+            case 'Left':
+                return {step, before: -2};
+            case 'Center':
+                return {step, before: -1};
+            case 'Right':
+                return {step, before: 0};
+        }
+    },
     registerBoxIdState: function (regions) {
+        const {step, before} = this.cameraSettings(this.camera);
+        const firstId = step + before;
+
         const lastBoxId = Math.max(...regions.map(x => x.boxId));
 
         // List of registred boxIds { id: 1}
-        const regIds = regions.reduce(
+        const idsInTheFrame = regions.reduce(
             (a, reg) => ({...a, [reg.boxId]: 1 }), {}
         );
-
         // find the missing box in the current frame
         const missingBox = this.boxIdState.find(
-            ({boxId, locked}) => ( !regIds[boxId] && !locked)
+            ({boxId, locked}) => ( !idsInTheFrame[boxId] && !locked)
         );
 
         const gapId = this.boxIdState
@@ -942,10 +957,10 @@
           .sort( (a,b) => a - b)
           .reduce( (acc, boxId) => {
               if (acc.found) return acc;
-              if(acc.gap + 1 !== boxId) acc.found = true;
-              acc.gap++;
+              if(acc.gap + step !== boxId) acc.found = true;
+              acc.gap = acc.gap + step;
               return acc;
-          } , {gap: 0, found: false});
+          } , {gap: before, found: false});
 
         const currentFrameId = this.getCurrentFrameId();
 
@@ -954,12 +969,12 @@
         // First BoxId
         if (this.boxIdState.length === 0) {
             this.boxIdState.push({
-                boxId: 1,
+                boxId: firstId,
                 locked: false,
                 currentFrameId,
                 prevFrameId: []
             });
-            return 1;
+            return firstId;
         }
 
         if( (missingBox && !gapId.found) || (missingBox && gapId.found && missingBox.boxId < gapId.gap) ){
@@ -999,7 +1014,7 @@
 
         // New BoxId
         if (!boxId) {
-            boxId = Math.max(...this.boxIdState.map(x => x.boxId)) + 1;
+            boxId = Math.max(...this.boxIdState.map(x => x.boxId)) + step;
             this.boxIdState.push({
                 boxId,
                 locked: false,
