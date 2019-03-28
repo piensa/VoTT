@@ -76,16 +76,16 @@ def Main():
     with open(options.json_path, 'r') as f:
         data = json.load(f)['frames']
 
-    lastKeyFrame = int(list(data.keys())[-1])
-
     if options.write:
         writer = create_writer(cap)
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     frame_no = 1
     while True:
+
         wait_key = 25
         flag, img = cap.read()
+
         if frame_no % 120 == 0:
             print('Processed {0} frames'.format(frame_no))
 
@@ -127,7 +127,7 @@ def Main():
         if frame_no == options.until:
             break
 
-        if frame_no > lastKeyFrame:
+        if flag is False:
             break
 
         frame_no += 1
