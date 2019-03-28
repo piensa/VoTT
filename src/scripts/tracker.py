@@ -1,5 +1,6 @@
 import cv2
 import json
+import numpy as np
 import optparse
 import os
 import time
@@ -55,6 +56,10 @@ def parse_options():
                       dest='write',
                       action='store_true',
                       default=False)
+    parser.add_option('-m', '--mask',
+                      dest='mask',
+                      action='store_true',
+                      default=False)
     options, remainder = parser.parse_args()
 
     # Check for errors.
@@ -86,6 +91,9 @@ def Main():
         wait_key = 25
         flag, img = cap.read()
 
+        # Create black image.
+        black_img = np.zeros(img.shape, dtype=np.uint8)
+
         if frame_no % 120 == 0:
             print('Processed {0} frames'.format(frame_no))
 
@@ -105,23 +113,30 @@ def Main():
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = create_rect(box)
-            if ids[i] == '4' or ids[i] == '16':
-                print(frame_no, key, box)
-                print((x1, y1, x2, y2))
 
-            crossed_color = check_color(crossed[i])
-            cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
-            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
-                        (0, 0, 0), 5, cv2.LINE_AA)
-            cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
-                        crossed_color, 1, cv2.LINE_AA)
-        if '4' in ids or '16' in ids:
-            wait_key = 0
+            if options.mask:
+                roi = img[y1:y2, x1:x2].copy()
+                black_img[y1:y2, x1:x2] = roi
+
+            if not options.mask:
+                crossed_color = check_color(crossed[i])
+                cv2.rectangle(img, (x1, y1), (x2, y2), crossed_color, 2, 1)
+                cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
+                            (0, 0, 0), 5, cv2.LINE_AA)
+                cv2.putText(img, ids[i], (x1, y1 - 10), font, 0.6,
+                            crossed_color, 1, cv2.LINE_AA)
 
         if options.write:
-            writer.write(img)
+            if options.mask:
+                writer.write(black_img)
+            else:
+                writer.write(img)
         else:
-            cv2.imshow('frame', img)
+            if options.mask:
+                cv2.imshow('frame', black_img)
+            else:
+                cv2.imshow('frame', img)
+
             if cv2.waitKey(wait_key) & 0xFF == ord('q'):
                 break
         if frame_no == options.until:
